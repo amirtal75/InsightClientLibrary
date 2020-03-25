@@ -1,0 +1,12 @@
+C:\Users\amirt\source\repos\InsightClientLibrary\InsightClientLibrary\obj\Debug\InsightClientLibrary.csproj.CoreCompileInputs.cache
+C:\Users\amirt\source\repos\InsightClientLibrary\InsightClientLibrary\bin\Debug\InsightClientLibrary.xml
+C:\Users\amirt\source\repos\InsightClientLibrary\InsightClientLibrary\bin\Debug\InsightClientLibrary.dll
+C:\Users\amirt\source\repos\InsightClientLibrary\InsightClientLibrary\bin\Debug\InsightClientLibrary.pdb
+C:\Users\amirt\source\repos\InsightClientLibrary\InsightClientLibrary\bin\Debug\Newtonsoft.Json.dll
+C:\Users\amirt\source\repos\InsightClientLibrary\InsightClientLibrary\bin\Debug\NLog.dll
+C:\Users\amirt\source\repos\InsightClientLibrary\InsightClientLibrary\bin\Debug\Newtonsoft.Json.xml
+C:\Users\amirt\source\repos\InsightClientLibrary\InsightClientLibrary\bin\Debug\NLog.xml
+C:\Users\amirt\source\repos\InsightClientLibrary\InsightClientLibrary\obj\Debug\InsightClientLibrary.csproj.CopyComplete
+C:\Users\amirt\source\repos\InsightClientLibrary\InsightClientLibrary\obj\Debug\InsightClientLibrary.dll
+C:\Users\amirt\source\repos\InsightClientLibrary\InsightClientLibrary\obj\Debug\InsightClientLibrary.pdb
+C:\Users\amirt\source\repos\InsightClientLibrary\InsightClientLibrary\obj\Debug\InsightClientLibrary.csprojAssemblyReference.cache

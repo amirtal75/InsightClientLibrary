@@ -1,0 +1,371 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>InsightClientLibrary</name>
+    </assembly>
+    <members>
+        <member name="T:InsightClientLibrary.Service">
+            <summary>
+            Represent teh majority of the field in a service found in the insight database
+            </summary>
+        </member>
+        <member name="T:InsightClientLibrary.Tools">
+            <summary>
+            Class to avoid recycle code, contains useful methods
+            </summary>
+        </member>
+        <member name="M:InsightClientLibrary.Tools.ReadNameFromExcelFile(System.String,System.Int32,System.Int32)">
+            <summary>
+            Method to extract list of names from an excel file
+            </summary>
+            <param name="excelFilenameXlsx">Name of the file</param>
+            <param name="nameColoumn">the number of the cloumn containing the names in the excel file</param>
+            <param name="uuidstartingRow">the rwo from which the count begins from, for instance the first row can be a subject row</param>
+            <returns></returns>
+        </member>
+        <member name="M:InsightClientLibrary.Tools.InitLogger(System.Boolean,System.String)">
+            <summary>
+            Creates a logger for a class
+            </summary>
+            <param name="debug"></param>
+            <param name="className"></param>
+            <returns></returns>
+        </member>
+        <member name="T:InsightClientLibrary.GraphElement">
+            <summary>
+            Represents an element in a graph, akeen to a node in a bydirectional linked list
+            </summary>
+        </member>
+        <member name="F:InsightClientLibrary.InsightClient.debug">
+            <summary>
+            This class contains a variety of methods meant to perform requests from and to Insight.
+            In case the insight version will be updated, the following must adjusted accordingly:
+                1. The function GetInsightObjectTypeList, uses the insight API query: https://jira.mx1.com/rest/insight/1.0/objectschema/3/objecttypes/flat
+                2. The function 
+            </summary>
+        </member>
+        <member name="F:InsightClientLibrary.InsightClient.POPName">
+            <value> This value will prevent the code from working with equipments of other departments </value>
+        </member>
+        <member name="F:InsightClientLibrary.InsightClient.ObjectGroups">
+            <value>this value contains all object groups in the schema</value>
+        </member>
+        <member name="F:InsightClientLibrary.InsightClient.forbiddenInsightApiQuerySymbols">
+            <value> This value wdescribes symbols that Insight API considers illegal in a request </value>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.#ctor(System.Boolean,System.String)">
+            <summary>
+            Constructs a client to communicate with insight
+            </summary>
+            <param name="_debug"> will run the program with debug messages accordingly</param>
+            <param name="PopName"> the name of the pop that creates this client</param>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.#ctor(System.Boolean,RestSharp.RestClient,System.String)">
+            <summary>
+            Constructs a client to communicate with insight
+            </summary>
+            Constructs a client to communicate with insight
+            <param name="debug"> will run the program with debug messages accordingly</param>
+            <param name="client"> the client to perform actions in this code, in case you wish to use an ecternal RestSharp client</param>
+            <param name="PopName"> the name of the pop that creates this client</param>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.VerifyValidRoute(InsightClientLibrary.ServiceGraph)">
+            <summary>
+            Goes over all the elements in the graph, for each element check the incoming elements in Insight database and in the built graph route.
+            If every grapgh element has the same incoming elements in both the graph route and Insight database, we can deduct that the graph is valid
+            </summary>
+            <param name="graph">the graph to check for a valid route</param>
+            <returns>true if the graph route is valid, false otherwise</returns>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.GetServiceGraph(System.String)">
+            <summary>
+            The insight client will search for the elemets related to the uuid.
+            </summary>
+            <param name="uuid"> The uuid that we want to get a graph/route for</param>
+            <returns>Grapgh which represents the service element route</returns>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.ReadNameFromExcelFile(System.String,System.Int32,System.Int32)">
+            <summary>
+            Method to extract list of names from an excel file
+            </summary>
+            <param name="excelFilenameXlsx">Name of the file</param>
+            <param name="nameColoumn">the number of the cloumn containing the names in the excel file</param>
+            <param name="uuidstartingRow">the rwo from which the count begins from, for instance the first row can be a subject row</param>
+            <returns></returns>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.CreateSchemaGraph(System.Int32)">
+            <summary>
+            Goes over the schema data from insight and create groups to an accesible member
+            </summary>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.GetInsightObjectTypeList(System.Int32)">
+            <summary>
+             Gets all object types conatained in a schema
+            </summary>
+            <returns>array of <see cref="T:InsightClientLibrary.ObjectType"/>ObjectType/></returns>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.GetDefaultClient">
+            <summary>
+            return a lient using the credentails of the MUC generic user
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.GetClient(System.String,System.String,System.String,System.String)">
+            <summary>
+            
+            </summary>
+            <param name="username"> Insight valid username</param>
+            <param name="password"> Insight valid password</param>
+            <param name="agentType"> optional agent type</param>
+            <param name="agentName">optional agent name</param>
+            <returns> A new rest client initialized using the given parameters</returns>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.GetInsightObjectByName(System.String,System.String)">
+            <summary>
+            Initiates an API call to insight to receive a response for an object matching the given name.
+            </summary>
+            <param name="name">Object name</param>
+            <param name="group">Object type group that the object belons to in insight</param>
+            <returns>Insight object containing the data from Insight</returns>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.GetInsightObjectByName(System.String,System.String,System.String)">
+            <summary>
+            Initiates an API call to insight to receive a response for an object matching the given name.
+            </summary>
+            <param name="name">Object name</param>
+            <param name="group">Object type group that the object belongs to in insight database</param>
+            <param name="groupMemeber">name of the member in the insight type groug that the name belongs to</param>
+            <returns>Insight object containing the data from Insight</returns>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.GetInsightOutBoundByObjectName(System.String,System.String)">
+            <summary>
+            Initiates an API call to insight to receive a response for objects reffering to the given name.
+            </summary>
+            <param name="name">Object name</param>
+            <param name="groupName">Object type group that the object belongs to in insight database</param>
+            <returns>Insight object containing the data from Insight</returns>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.GetInsightOutBoundByObjectName(System.String,System.String,System.String)">
+            <summary>
+            Initiates an API call to insight to receive a response for objects reffering to the given name.
+            </summary>
+            <param name="name">Object name</param>
+            <param name="groupName">Object type group that the object belongs to in insight database</param>
+            <param name="groupMemeber">name of the member in the insight type groug that the name belongs to</param>
+            <returns>Insight object containing the data from Insight</returns>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.GetInsightinBoundByObjectName(System.String,System.String)">
+            <summary>
+            Initiates an API call to insight to receive a response for objects refferd by the given name.
+            </summary>
+            <param name="name">Object name</param>
+            <param name="groupName">Object type group that the object belongs to in insight database</param>
+            <returns>Insight object containing the data from Insight</returns>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.GetInsightinBoundByObjectName(System.String,System.String,System.String)">
+            <summary>
+            Initiates an API call to insight to receive a response for objects refferd by the given name.
+            </summary>
+            <param name="name">Object name</param>
+            <param name="groupName">Object type group that the object belongs to in insight database</param>
+            <param name="groupMemeber">name of the member in the insight type groug that the name belongs to</param>
+            <returns>Insight object containing the data from Insight</returns>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.InsightGetByIqlObjectIdGroup(System.String,System.String,System.String)">
+            <summary>
+            Using the group details received, deduces the id group the insight request will use to receive a response for the request
+            </summary>
+            <returns>Insight object containing the data from Insight</returns>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.InsightGetByGeneralIqlQuery(System.String)">
+            <summary>
+            An advanced user can directly enter an IQL Insight valid query and receive a valid response
+            </summary>
+            <param name="iqlQuery"> The IQL query for the API call</param>
+            <returns>Insight object containing the data from Insight</returns>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.ExecuteGetResponse(System.String)">
+            <summary>
+            Excecute a get query for the gicen resource.
+            Appropriate debug meesages exists for troublshooting.
+            </summary>
+            <param name="resource">the insight query</param>
+            <returns>returns a response conatining the data according to the request</returns>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.ModifyUnspportedInsightNameConvention(System.String)">
+            <summary>
+            Checks the given name for illegal Insight API symbols.
+            </summary>
+            <param name="name">the name to check for valid characters</param>
+            <returns>modified name with no illegal characters, will be an empty string in case too many invalid characters exist</returns>
+        </member>
+        <member name="T:InsightClientLibrary.ServiceGraph">
+            <summary>
+            Represent a service graph for a uuid
+            </summary>
+        </member>
+        <member name="F:InsightClientLibrary.ServiceGraph.graphElements">
+            <value>List of all the elements in the graph</value>
+        </member>
+        <member name="P:InsightClientLibrary.ServiceGraph.Service">
+            <value>teh service that the graph was built for</value>
+        </member>
+        <member name="P:InsightClientLibrary.ServiceGraph.serviceStatus">
+            <value>service status</value>
+        </member>
+        <member name="P:InsightClientLibrary.ServiceGraph.IqlApiResult">
+            <value>Raw insight element data</value>
+        </member>
+        <member name="P:InsightClientLibrary.ServiceGraph.RouteElements">
+            <value>Array of all the entries in the graph</value>
+        </member>
+        <member name="P:InsightClientLibrary.ServiceGraph.RouteTypeAttributes">
+            <value>Array of all the typeAttributes in the graph</value>
+        </member>
+        <member name="P:InsightClientLibrary.ServiceGraph.ElementIncomingElementIndexes">
+            <value>Array of int lists, each index related to a routElement, for that index, each list contains indexes in the routeelements that are incoming elements for the route element in that index</value>
+        </member>
+        <member name="P:InsightClientLibrary.ServiceGraph.Sources">
+            <value>List of the graph sources</value>
+        </member>
+        <member name="P:InsightClientLibrary.ServiceGraph.RouteEnd">
+            <value>List of the graph route end elements</value>
+        </member>
+        <member name="P:InsightClientLibrary.ServiceGraph.MonitoringElementIndex">
+            <value>index in the route element array reffering to the monitoring element of the graph</value>
+        </member>
+        <member name="P:InsightClientLibrary.ServiceGraph.ServiceElementNameList">
+            <value>Dictionary containing the names of all the elements in the graph</value>
+        </member>
+        <member name="F:InsightClientLibrary.ServiceGraph.ObjectAttributeTypesById">
+            <value>Dictionary containing the names of all the atribute types in the graph</value>
+        </member>
+        <member name="F:InsightClientLibrary.ServiceGraph.constructorSuceeded">
+            <value>bool value indicating a succesfull and valid graph build</value>
+        </member>
+        <member name="F:InsightClientLibrary.ServiceGraph.ElementMemberIsNull">
+            <value>bool value indicating a partially succesfull graph build with an invalid member</value>
+        </member>
+        <member name="M:InsightClientLibrary.ServiceGraph.#ctor(InsightClientLibrary.IqlApiResult,InsightClientLibrary.IqlApiResult,System.Boolean,System.String)">
+            <summary>
+            Constructs a graph containing raw and parsed information of the insight API result
+            </summary>
+            <param name="root"> the element list API result</param>
+            <param name="service">the service get API result</param>
+            <param name="_debug"> indicated whether the program should run in debug mode</param>
+            <param name="uuid"> the name of the service to build a graph for</param>
+        </member>
+        <member name="M:InsightClientLibrary.ServiceGraph.PrintGraph">
+            <summary>
+            print the graph elements by layers, each layer cntains elements of the same length
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:InsightClientLibrary.ServiceGraph.FindMinLength(System.Collections.Generic.List{InsightClientLibrary.GraphElement})">
+            <summary>
+            finds the element/s with shortest distance to this element
+            </summary>
+            <param name="currentSpan"> the list of elements in the span we wish to compare</param>
+            <returns></returns>
+        </member>
+        <member name="M:InsightClientLibrary.ServiceGraph.IsActive(InsightClientLibrary.GraphElement)">
+            <summary>
+            Method to check if an element is active
+            </summary>
+            <param name="element"></param>
+            <returns></returns>
+        </member>
+        <member name="M:InsightClientLibrary.ServiceGraph.getLockableElements(System.Collections.Generic.List{InsightClientLibrary.GraphElement},System.String)">
+            <summary>
+            Finds lockable graph elements for a given element list
+            </summary>
+            <param name="initialElements"></param>
+            <param name="pop"></param>
+            <returns></returns>
+        </member>
+        <member name="M:InsightClientLibrary.ServiceGraph.findMinimumCommonElement">
+            <summary>
+            finds the element which is deciding the active source
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:InsightClientLibrary.ServiceLocker">
+            <summary>
+            Class with methods used to extract dta for locking elements in a corresponding equipment
+            </summary>
+        </member>
+        <member name="M:InsightClientLibrary.ServiceLocker.#ctor(System.Boolean,System.String,InsightClientLibrary.InsightClient)">
+            <summary>
+            Constructor for getting a service locker.
+            </summary>
+            <param name="_debug"> should the program run in debug mode</param>
+            <param name="pop">the name of the pop the script runs for</param>
+            <param name="client"> the client which will be used to perform the actions</param>
+        </member>
+        <member name="M:InsightClientLibrary.ServiceLocker.#ctor(System.Boolean,System.String)">
+            <summary>
+            Constructor for getting a service locker.
+            </summary>
+            <param name="_debug"> should the program run in debug mode</param>
+            <param name="pop">the name of the pop the script runs for</param>
+        </member>
+        <member name="M:InsightClientLibrary.ServiceLocker.GetSourceLockElement(System.String,System.String,System.String,System.String)">
+            <summary>
+            Get a lock element for each source that exists for the given uuid
+            </summary>
+            <param name="uuid"> the UUID that we want to lock a source for</param>
+            <param name="destinationIrdManagmentIp"></param>
+            <param name="destinationIrdName"></param>
+            <param name="destinationIrdModel"></param>
+            <returns></returns>
+        </member>
+        <member name="M:InsightClientLibrary.ServiceLocker.GetLockElement(System.String,System.String,System.String,InsightClientLibrary.ServiceGraph,InsightClientLibrary.GraphElement)">
+            <summary>
+            parse the given data to lockable and readable parameters
+            </summary>
+            <param name="destinationIrdManagmentIp"></param>
+            <param name="destinationIrdName"></param>
+            <param name="destinationIrdModel"></param>
+            <param name="graph"></param>
+            <param name="elementToLock"></param>
+            <returns></returns>
+        </member>
+        <member name="T:InsightClientLibrary.RFLockableElement">
+            <summary>
+            RFLockableElement is a class for locking an RF input
+            </summary>
+        </member>
+        <member name="M:InsightClientLibrary.RFLockableElement.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Constructor for an RF lock, parameters are self explanatory
+            </summary>
+            <param name="downlinkFrequency"></param>
+            <param name="modulation"></param>
+            <param name="downlinkPolarity"></param>
+            <param name="downlinkSatellite"></param>
+            <param name="downlinkSymbolRate"></param>
+            <param name="destinationIrdManagmentIp"></param>
+            <param name="destinationIrdName"></param>
+            <param name="destinationIrdModel"></param>
+            <param name="pop"></param>
+            <param name="serviceID"></param>
+            <param name="elementName"></param>
+            <param name="elementType"></param>
+        </member>
+        <member name="T:InsightClientLibrary.IPLockableElement">
+            <summary>
+            IPLockableElement is a class for locking an IP input
+            </summary>
+        </member>
+        <member name="T:InsightClientLibrary.MultiLockableElement">
+            <summary>
+            MultiLockableElement is a class for locking an element with noth an IP and RF parameters, like a downlink element with an outgoing multicast
+            </summary>
+        </member>
+        <member name="T:InsightClientLibrary.LockableElement">
+            <summary>
+            abstract base class for a lockable element
+            </summary>
+        </member>
+    </members>
+</doc>
