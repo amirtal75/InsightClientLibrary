@@ -2,83 +2,84 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using Excel = Microsoft.Office.Interop.Excel;
 
 namespace InsightClientLibrary
 {
     /// <summary>
-    /// Represent teh majority of the field in a service found in the insight database
+    /// Represent the majority of the field in a service found in the insight database
     /// </summary>
     public class Service
     {
         private NLog.Logger logger;
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public Dictionary<string, int> AttributeNamesByIds;
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public Dictionary<int, string> AttributeIdsByNames;
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public Dictionary<int, ObjectAttribute> AttributeByIds;
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public Dictionary<int, ObjectTypeAttribute> AttributeTypesByIds;
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string Key { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string Name { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string ConfluenceURL { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string Status { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string BroadcastTime { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public bool ClientVPN { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string UUID { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string ServiceOwner { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string ContentType { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string ServiceCategory { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string DistributionChannel { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string ServiceGroupe { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string ServiceRole { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string ServiceRemarks { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string StartofService { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string EndofService { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string ServiceDocumentationApproved { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
+        public Dictionary<int, string> AttributeIdsByNames;
+
+        /// <summary> </summary>
+        public Dictionary<int, ObjectAttribute> AttributeByIds;
+
+        /// <summary> </summary>
+        public Dictionary<int, ObjectTypeAttribute> AttributeTypesByIds;
+
+        /// <summary> </summary>
+        public string Key { get; set; }
+
+        /// <summary> </summary>
+        public string Name { get; set; }
+
+        /// <summary> </summary>
+        public string ConfluenceURL { get; set; }
+
+        /// <summary> </summary>
+        public string Status { get; set; }
+
+        /// <summary> </summary>
+        public string BroadcastTime { get; set; }
+
+        /// <summary> </summary>
+        public bool ClientVPN { get; set; }
+
+        /// <summary> </summary>
+        public string UUID { get; set; }
+
+        /// <summary> </summary>
+        public string ServiceOwner { get; set; }
+
+        /// <summary> </summary>
+        public string ContentType { get; set; }
+
+        /// <summary> </summary>
+        public string ServiceCategory { get; set; }
+
+        /// <summary> </summary>
+        public string DistributionChannel { get; set; }
+
+        /// <summary> </summary>
+        public string ServiceGroupe { get; set; }
+
+        /// <summary> </summary>
+        public string ServiceRole { get; set; }
+
+        /// <summary> </summary>
+        public string ServiceRemarks { get; set; }
+
+        /// <summary> </summary>
+        public string StartofService { get; set; }
+
+        /// <summary> </summary>
+        public string EndofService { get; set; }
+
+        /// <summary> </summary>
+        public string ServiceDocumentationApproved { get; set; }
+
+
+        /// <summary> </summary>
         public Service(IqlApiResult service, NLog.Logger logger, string originalUUID)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
         {
             if (service != null && service.objectEntries != null && service.objectEntries.Count > 0)
             {
@@ -173,38 +174,12 @@ namespace InsightClientLibrary
                 }
             }
         }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public void InitLogger(bool debug)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        {
-            var config = new NLog.Config.LoggingConfiguration();
-
-            // Targets where to log to: File and Console
-            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = @"D:\Amir\Log.txt" }
-            ;
-
-            // Rules for mapping loggers to targets            
-            if (debug)
-            {
-                config.AddRule(LogLevel.Debug, LogLevel.Fatal, logfile);
-            }
-            else config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
-
-
-            // Apply config           
-            NLog.LogManager.Configuration = config;
-            logger = NLog.LogManager.GetCurrentClassLogger();
-        }
-
     }
     /// <summary>
     /// Class to avoid recycle code, contains useful methods
     /// </summary>
     public class Tools
     {
-        public Tools()
-        {
-        }
         /// <summary>
         /// Method to extract list of names from an excel file
         /// </summary>
@@ -235,44 +210,117 @@ namespace InsightClientLibrary
                     if (val != null && val.Value2 != null)
                     {
                         uuid = val.Value2.ToString();
-                        if (uuid.Contains("+"))
-                        {
-                            uuid = uuid.Substring(uuid.IndexOf('+') + 1);
-                        }
-                        uuid = "\"" + uuid + "\"";
-                        uuidBuffer += uuid;
+                        uuidBuffer += uuid + "\n";
                     }
                 }
             }
-
+            xlWorkbook.Close(0);
+            xlApp.Quit();
             return uuidBuffer;
         }
         /// <summary>
-        /// Creates a logger for a class
+        /// Check if the IQl result and its members are not null.
+        /// Such a case can happen if there is an error with the confluence route of the service due to uncorrect relationships between Inisght objects.
         /// </summary>
-        /// <param name="debug"></param>
-        /// <param name="className"></param>
+        /// <param name="result"></param>
         /// <returns></returns>
-        public static NLog.Logger InitLogger(bool debug, string className)
+        public static bool IsValidIqlResult(IqlApiResult result)
         {
-            var config = new NLog.Config.LoggingConfiguration();
-
-            // Targets where to log to: File and Console
-            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = "Log.txt" };
-
-            // Rules for mapping loggers to targets            
-            if (debug)
+            return (result != null && (result.objectEntries != null) && (result.objectTypeAttributes != null));
+        }
+        /// <summary>
+        /// Checks the given name for illegal Insight API symbols.
+        /// </summary>
+        /// <param name="name">the name to check for valid characters</param>
+        /// <param name="forbiddenInsightApiQuerySymbols">the the insight API forbideen symbols</param>
+        /// <returns>modified name with no illegal characters, will be an empty string in case too many invalid characters exist</returns>
+        public static string ModifyUnspportedInsightNameConvention(string name, string forbiddenInsightApiQuerySymbols)
+        {
+            // A legal uuid has the convention format of Name-DEMARCATION_A-DEMARCATION_B-DEMARCATION_C
+            // where DEMARCATIONS B and C are optional
+            Regex regex = new Regex(forbiddenInsightApiQuerySymbols);
+            if (!name.Contains("-"))
             {
-                config.AddRule(LogLevel.Debug, LogLevel.Fatal, logfile);
+                throw new IllegalNameException(name);
             }
-            else config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
+            else
+            {
+                int indexOfFirstDemarcationIndicator = name.IndexOf('-');
+                string nameToModify = name.Substring(0, indexOfFirstDemarcationIndicator);
+                bool hasForbidden = true;
 
-
-            // Apply config           
-            NLog.LogManager.Configuration = config;
-            NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-            //NLog.Logger logger = NLog.LogManager.GetLogger(className);
-            return logger;
+                while (hasForbidden)
+                {
+                    foreach (char forbiddenSymbol in forbiddenInsightApiQuerySymbols)
+                    {
+                        if (nameToModify.Contains(forbiddenSymbol.ToString()))
+                        {
+                            int forbiddenIndex = nameToModify.IndexOf(forbiddenSymbol);
+                            if (forbiddenIndex < nameToModify.Length - 1)
+                            {
+                                nameToModify = nameToModify.Substring(forbiddenIndex + 1);
+                            }
+                            else nameToModify = "";
+                        }
+                    }
+                    hasForbidden = false;
+                    foreach (char ch in nameToModify)
+                    {
+                        if (forbiddenInsightApiQuerySymbols.Contains(ch.ToString()))
+                        {
+                            hasForbidden = true;
+                        }
+                    }
+                }
+                if (nameToModify.Equals(""))
+                {
+                    throw new IllegalNameException(name);
+                }
+                else
+                {
+                    nameToModify += name.Substring(indexOfFirstDemarcationIndicator);
+                    if (nameToModify.Contains(" "))
+                    {
+                        var s = '"'.ToString();
+                        nameToModify = s + nameToModify + s;
+                    }
+                    return nameToModify;
+                }
+            }
+        }
+        /// <summary>
+        /// Checks if the given string is a legal IPV4 adress.
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <returns></returns>
+        public static bool LegalIPV4(string ip)
+        {
+            bool answer = true;
+            // check that the string is of the form XXX.XXX.XXX.XXX
+            if (!ip.Contains("."))
+            {
+                return false;
+            }
+            string[] octats = ip.Split('.');
+            // check if each octat contains a maximum of three number characters
+            for (int i = 0; i < octats.Length; i++)
+            {
+                if (octats[i].Length > 3)
+                {
+                    return false;
+                }
+                else
+                {
+                    foreach (char ch in octats[i])
+                    {
+                        if (ch < '0' || ch > '9')
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return answer;
         }
 
     }
@@ -281,9 +329,8 @@ namespace InsightClientLibrary
     /// </summary>
     public class GraphElement
     {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public GraphElement(ObjectEntry currentElement, int incomingLength, Dictionary<int, string> ObjectAttributeTypesById)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
         {
             this.CurrentElement = currentElement;
             this.OutgoingElements = new List<GraphElement>();
@@ -291,30 +338,30 @@ namespace InsightClientLibrary
             this.graphLength = incomingLength + 1;
             this.ObjectAttributeTypesById = ObjectAttributeTypesById;
         }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public Dictionary<int, string> ObjectAttributeTypesById;
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public ObjectEntry CurrentElement { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public List<GraphElement> IncomingElements { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public List<GraphElement> OutgoingElements { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int graphLength { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public void AddOutgoingElement(GraphElement outgoing)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
         {
             OutgoingElements.Add(outgoing);
         }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public void AddIncomingElement(GraphElement incoming)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
         {
             IncomingElements.Add(incoming);
             int maxLength = Math.Max(incoming.graphLength + 1, this.graphLength);
@@ -329,18 +376,18 @@ namespace InsightClientLibrary
 
         }
 
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public override bool Equals(object obj)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
         {
             return obj is GraphElement element &&
                 CurrentElement.objectKey.Equals(element.CurrentElement.objectKey);
 
         }
 
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public override int GetHashCode()
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
         {
             var hashCode = -384246513;
             hashCode = hashCode * -1521134295 + EqualityComparer<ObjectEntry>.Default.GetHashCode(CurrentElement);
@@ -349,9 +396,9 @@ namespace InsightClientLibrary
             return hashCode;
         }
 
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public void Update()
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
         {
             int max = this.graphLength;
             int oldLength = this.graphLength;
@@ -371,292 +418,292 @@ namespace InsightClientLibrary
             }
         }
     }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
     public class ApplicationEntry
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public string name { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string type { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string typeValue { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string additionalValue { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
     public class ConfluenceSpace
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public string name { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string type { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string typeValue { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string additionalValue { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
     public class ObjectTypeAttribute
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public string additionalValue { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public DateTime created { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public DefaultType defaultType { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string description { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool hidden { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int id { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool includeChildObjectTypes { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string iql { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool Label { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int maximumCardinality { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int minimumCardinality { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string name { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int ObjectTypeId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string options { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int position { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int referenceObjectTypeId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int referenceTypeId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string regexValidation { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool removable { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string suffix { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool summable { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int type { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string typevalue { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool uniqueAttribute { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public DateTime updated { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public ConfluenceSpace confluenceAddValue { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public ApplicationEntry confluenceTypeValue { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool editable { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool objectAttributeExists { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public ObjectType referenceObjectType { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public ReferenceType referenceType { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool sortable { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool system { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string typeValue { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
 
     }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
     public class ObjectType
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public int id { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string name { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int type { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public Icon icon { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int position { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public DateTime created { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public DateTime updated { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int objectCount { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int parentObjectTypeId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int objectSchemaId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool inherited { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool abstractObjectType { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool parentObjectTypeInherited { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string description { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
 
     }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
     public class Icon
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-    {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public int id { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string name { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string url16 { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string url48 { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-    }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-    public class _Links
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-    {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string self { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-    }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-    public class ObjectEntry
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-    {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public int id { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public int objectTypeId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string label { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string objectKey { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public Avatar avatar { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public ObjectType objectType { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string created { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string updated { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public bool hasAvatar { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public long timestamp { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public ObjectAttribute[] attributes { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public _Links _links { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string name { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public ObjectHistory objectHistory { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public Comment comment { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public ObjectJiraIssue jiraIssue { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public ObjectWatch objectWatch { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+    {
+        /// <summary> </summary>
+        public int id { get; set; }
+
+        /// <summary> </summary>
+        public string name { get; set; }
+
+        /// <summary> </summary>
+        public string url16 { get; set; }
+
+        /// <summary> </summary>
+        public string url48 { get; set; }
+
+    }
+        /// <summary> </summary>
+    public class _Links
+
+    {
+        /// <summary> </summary>
+        public string self { get; set; }
+
+    }
+        /// <summary> </summary>
+    public class ObjectEntry
+
+    {
+        /// <summary> </summary>
+        public int id { get; set; }
+
+        /// <summary> </summary>
+        public int objectTypeId { get; set; }
+
+        /// <summary> </summary>
+        public string label { get; set; }
+
+        /// <summary> </summary>
+        public string objectKey { get; set; }
+
+        /// <summary> </summary>
+        public Avatar avatar { get; set; }
+
+        /// <summary> </summary>
+        public ObjectType objectType { get; set; }
+
+        /// <summary> </summary>
+        public string created { get; set; }
+
+        /// <summary> </summary>
+        public string updated { get; set; }
+
+        /// <summary> </summary>
+        public bool hasAvatar { get; set; }
+
+        /// <summary> </summary>
+        public long timestamp { get; set; }
+
+        /// <summary> </summary>
+        public ObjectAttribute[] attributes { get; set; }
+
+        /// <summary> </summary>
+        public _Links _links { get; set; }
+
+        /// <summary> </summary>
+        public string name { get; set; }
+
+        /// <summary> </summary>
+        public ObjectHistory objectHistory { get; set; }
+
+        /// <summary> </summary>
+        public Comment comment { get; set; }
+
+        /// <summary> </summary>
+        public ObjectJiraIssue jiraIssue { get; set; }
+
+        /// <summary> </summary>
+        public ObjectWatch objectWatch { get; set; }
+
+
+        /// <summary> </summary>
         public override bool Equals(object obj)
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
         {
             return obj is ObjectEntry entry &&
                    objectKey == entry.objectKey &&
                    name == entry.name;
         }
 
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public override int GetHashCode()
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
         {
             var hashCode = -343287073;
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(objectKey);
@@ -664,294 +711,294 @@ namespace InsightClientLibrary
             return hashCode;
         }
 
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public override string ToString()
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
         {
             return objectKey + ": " + name;
         }
     }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
     public class ObjectJiraIssue
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public int customFieldId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int id { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int jiraIssueId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int objectId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
     public class Comment
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public string author { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string comment { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public DateTime created { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int id { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int role { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public DateTime updated { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int objectId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
     public class ObjectWatch
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public string userKey { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int id { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int objectId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
     public class ObjectAttachment
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public string author { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string comment { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public DateTime created { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string filename { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int filesize { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int id { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string mimeType { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string nameInFileSystem { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int objectId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
     public class ObjectHistory
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public string ActorUserKey { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string AffectedAttribute { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int id { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string insightVersion { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string newKeyValues { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string newValue { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int objectId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int ObjectTypeAttributeId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string oldKeyValues { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string oldValue { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int type { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
     public class Avatar
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public string url16 { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string url48 { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string url72 { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string url144 { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string url288 { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int objectId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
     public class DefaultType
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public int typeId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string typeName { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
     public class ObjectAttribute
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public int id { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int objectId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int objectTypeAttributeId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public List<ObjectAttributeValue> ObjectAttributeValues { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool hidden { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     }
 
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
     public class ObjectAttributeValue
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public string value { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string displayValue { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string additionalValue { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int id { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int objectAttributeId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int referencedObjectId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public ObjectEntry referencedObject { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
 
     }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
     public class ReferenceType
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public int id { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string name { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string color { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string url116 { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool removable { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int objectSchemaId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
     public class IqlApiResult
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        /// <summary> </summary>
         public List<ObjectEntry> objectEntries { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public List<ObjectTypeAttribute> objectTypeAttributes { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int objectTypeId { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool objectTypeIsInherited { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool abstractObjectType { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int totalFilterCount { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int startIndex { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int toIndex { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int pageObjectSize { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int pageNumber { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string orderWay { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public string iql { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool iqlSearchResult { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public bool conversionPossible { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+        /// <summary> </summary>
         public int pageSize { get; set; }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     }
 
 }
