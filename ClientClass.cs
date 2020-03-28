@@ -158,8 +158,8 @@ namespace InsightClientLibrary
                 var GraphRouteIncomingElements = graphElement.IncomingElements;
                 if (!Tools.IsValidIqlResult(InsightIncomingElements))
                 {
-                    logger.Debug("Error in the insight response received");
-                    return false;
+                    logger.Debug("Error in the insight response received, assuming valid graph build");
+                    return true;
                 }
                 else if (InsightIncomingElements.objectEntries.Count != GraphRouteIncomingElements.Count)
                 {
