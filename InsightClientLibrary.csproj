@@ -62,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BaseClasses.cs" />
+    <Compile Include="Exceptions.cs" />
     <Compile Include="ClientClass.cs" />
     <Compile Include="GraphClass.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

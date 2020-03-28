@@ -34,10 +34,8 @@ namespace InsightClientLibrary
         public Dictionary<string, int> ServiceElementNameList { get; set; }
         /// <value>Dictionary containing the names of all the atribute types in the graph</value>
         public Dictionary<int, string> ObjectAttributeTypesById;
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public NLog.Logger logger;
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-        /// <value>bool value indicating a succesfull and valid graph build</value>
+        private NLog.Logger logger;
+        /// <value>bool value indicating a completley succesfull and valid graph build</value>
         public bool constructorSuceeded = false;
         /// <value>bool value indicating a partially succesfull graph build with an invalid member</value>
         public bool ElementMemberIsNull = false;
@@ -53,7 +51,7 @@ namespace InsightClientLibrary
         public ServiceGraph(IqlApiResult root, IqlApiResult service, bool _debug, string uuid)
         {
             debug = _debug;
-            InitLogger();
+            logger = NLog.LogManager.GetCurrentClassLogger();
             this.Service = new Service(service, logger,uuid);
             if (root == null || service.objectEntries == null || service.objectTypeAttributes == null)
             {
@@ -121,6 +119,31 @@ namespace InsightClientLibrary
 
             this.constructorSuceeded = initSuccess && incominElementSuccess && soureSetSuccess && buildGraphSuccess;
         }
+        /// <summary>
+        /// Creates a logger for a class
+        /// </summary>
+        /// <param name="debug"></param>
+        /// <returns></returns>
+        public NLog.Logger InitLogger(bool debug)
+        {
+            var config = new NLog.Config.LoggingConfiguration();
+
+            // Targets where to log to: File and Console
+            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = @"D:\Amir\Log.txt" };
+
+            // Rules for mapping loggers to targets            
+            if (debug)
+            {
+                config.AddRule(LogLevel.Trace, LogLevel.Fatal, logfile);
+            }
+            else config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
+
+
+            // Apply config           
+            NLog.LogManager.Configuration = config;
+            NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+            return logger;
+        }
         private void InitData()
         {
             for (int i = 0; i < this.RouteElements.Count; i++)
@@ -136,26 +159,6 @@ namespace InsightClientLibrary
             {
                 ObjectAttributeTypesById.Add(attributeType.id, attributeType.name);
             }
-        }
-        private void InitLogger()
-        {
-            var config = new NLog.Config.LoggingConfiguration();
-
-            // Targets where to log to: File and Console
-            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = @"D:\Amir\Log.txt" }
-            ;
-
-            // Rules for mapping loggers to targets            
-            if (debug)
-            {
-                config.AddRule(LogLevel.Debug, LogLevel.Fatal, logfile);
-            }
-            else config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
-
-
-            // Apply config           
-            NLog.LogManager.Configuration = config;
-            logger = NLog.LogManager.GetCurrentClassLogger();
         }
         private void FindIncomingElements()
         {
@@ -320,7 +323,7 @@ namespace InsightClientLibrary
         /// </summary>
         /// <param name="currentSpan"> the list of elements in the span we wish to compare</param>
         /// <returns></returns>
-        public static List<GraphElement> FindMinLength(List<GraphElement> currentSpan)
+        public List<GraphElement> FindMinLength(List<GraphElement> currentSpan)
         {
             List<GraphElement> element = new List<GraphElement>();
             if (currentSpan == null)
@@ -364,42 +367,6 @@ namespace InsightClientLibrary
             }
             return ans;
         }
-        private bool QueryVerification(string[] queries, Dictionary<string, int> AttributeByIds, Dictionary<int, List<ObjectAttributeValue>> valueList)
-        {
-            int typeAttrIndex = -1;
-            bool answer = false;
-            foreach (var query in queries)
-            {
-                if (AttributeByIds.ContainsKey(query))
-                {
-                    typeAttrIndex = AttributeByIds[query];
-                    if (typeAttrIndex > -1)
-                    {
-                        List<ObjectAttributeValue> values = valueList[typeAttrIndex];
-                        if (values != null && values.Count > 0 && values[0].displayValue != null && !values[0].displayValue.Equals(""))
-                        {
-                            answer = true;
-                        }
-                        else
-                        {
-                            answer = false;
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        answer = false;
-                        break;
-                    }
-                }
-                else
-                {
-                    answer = false;
-                    break;
-                }
-            }
-            return answer;
-        }
         /// <summary>
         /// Finds lockable graph elements for a given element list
         /// </summary>
@@ -429,105 +396,58 @@ namespace InsightClientLibrary
                         valueList.Add(typeId, attribute.ObjectAttributeValues);
                     }
                     string department = "";
-                    string query = "";
                     int departmentId = AttributeByIds["Department"];
                     List<ObjectAttributeValue> valList = valueList[departmentId];
                     if (valList.Count == 1)
                     {
                         department = valList[0].displayValue;
                     }
-                    string[] queries;
                     elementTypeName = graphElement.CurrentElement.objectType.name.ToLower();
-                    switch (elementTypeName.ToLower())
+                    if (department.ToLower().Contains(pop.ToLower()))
                     {
-                        case "downlink":
-                            if (department.Contains(pop))
-                            {
+                        switch (elementTypeName.ToLower())
+                        {
+                            case "downlink":
                                 lockableElements.Add(graphElement);
-                            }
-                            break;
-                        case "encoding":
-                            query = "Encoding Multicast " + pop;
-                            queries = (new string[3] { (query + " Main"), (query + " BU"), query });
-                            if (QueryVerification(queries, AttributeByIds, valueList))
-                            {
+                                break;
+                            case "encoding":
                                 lockableElements.Add(graphElement);
-                            }
-                            break;
-                        case "muxing":
-                            query = "Muxing Output Main Multicast " + pop;
-                            queries = (new string[2] { "Muxing Output Main Multicast " + pop, "Muxing Output BU Multicast " + pop });
-                            if (QueryVerification(queries, AttributeByIds, valueList))
-                            {
+                                break;
+                            case "muxing":
                                 lockableElements.Add(graphElement);
-                            }
-                            break;
-                        case "timeshift":
-                            queries = (new string[1] { "Timeshift Multicast " + pop });
-                            if (QueryVerification(queries, AttributeByIds, valueList))
-                            {
+                                break;
+                            case "timeshift":
                                 lockableElements.Add(graphElement);
-                            }
-                            break;
-                        case "mbr":
-                            queries = (new string[2] { "Multicast Out Main " + pop, "Multicast Out BU " + pop });
-                            if (QueryVerification(queries, AttributeByIds, valueList))
-                            {
+                                break;
+                            case "mbr":
                                 lockableElements.Add(graphElement);
-                            }
-                            break;
-                        case "ip to ip gateway":
-                            query = "Multicast " + pop;
-                            queries = (new string[2] { query + " In", query + " Out" });
-                            if (QueryVerification(queries, AttributeByIds, valueList))
-                            {
+                                break;
+                            case "ip to ip gateway":
                                 lockableElements.Add(graphElement);
-                            }
-                            break;
-                        case "decoding":
-                            query = "Muxing Output Main Multicast " + pop;
-                            queries = (new string[1] { "Multicast Out " + pop });
-                            if (QueryVerification(queries, AttributeByIds, valueList))
-                            {
+                                break;
+                            case "decoding":
                                 lockableElements.Add(graphElement);
-                            }
-                            break;
-                        case "channel in a box":
-                            query = "Muxing Output Main Multicast " + pop;
-                            queries = (new string[1] { "Output Multicast " + pop });
-                            if (QueryVerification(queries, AttributeByIds, valueList))
-                            {
+                                break;
+                            case "channel in a box":
                                 lockableElements.Add(graphElement);
-                            }
-                            break;
-                        case "uplink":
-                            if (department.Contains(pop))
-                            {
+                                break;
+                            case "uplink":
                                 lockableElements.Add(graphElement);
-                            }
-                            break;
-                        case "fiber video transfer":
-                            query = "Muxing Output Main Multicast " + pop;
-                            queries = (new string[2] { "Fiber Video Transfer Multicast IP " + pop, "Fiber Video Transfer Backup Multicast IP " + pop });
-                            if (QueryVerification(queries, AttributeByIds, valueList))
-                            {
+                                break;
+                            case "fiber video transfer":
                                 lockableElements.Add(graphElement);
-                            }
-                            break;
-                        case "dvb server":
-                            query = "Muxing Output Main Multicast " + pop;
-                            queries = (new string[2] { "Output Main Multicast " + pop, "Output BU Multicast " + pop });
-                            if (QueryVerification(queries, AttributeByIds, valueList))
-                            {
+                                break;
+                            case "dvb server":
                                 lockableElements.Add(graphElement);
-                            }
-                            break;
-                        default:
-                            if (graphElement != null && graphElement.OutgoingElements != null)
-                            {
-                                elementsToFind.AddRange(FindMinLength(graphElement.OutgoingElements));
-                            }
-                            break;
+                                break;
+                            default:
+                                if (graphElement != null && graphElement.OutgoingElements != null)
+                                {
+                                    elementsToFind.AddRange(FindMinLength(graphElement.OutgoingElements));
+                                }
+                                break;
+                        }
+
                     }
                 }
             }

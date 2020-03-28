@@ -10,9 +10,9 @@ using System.IO;
 
 namespace InsightClientLibrary
 {
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        #pragma warning disable CS1591
     public class InsightClient
-        #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+        #pragma warning restore CS1591
     {
         /// <summary>
         /// This class contains a variety of methods meant to perform requests from and to Insight.
@@ -27,9 +27,25 @@ namespace InsightClientLibrary
         /// <value>this value contains all object groups in the schema</value>
         private Dictionary<string, List<ObjectType>> ObjectGroups;
         private RestClient InsightRestClient;
-        /// <value> This value wdescribes symbols that Insight API considers illegal in a request </value>
+        /// <value> This value describes symbols that Insight API considers illegal in a request </value>
         public string forbiddenInsightApiQuerySymbols = "<>#+,&";
-
+        /// <summary>
+        /// This is the Insight API API server adress.
+        /// Should the insight command structure change, you need to modify this field for continuing support in future versions.
+        /// </summary>
+        public readonly string InsightApiServerAdress = "https://jira.mx1.com/rest/insight/1.0/";
+        /// <summary>
+        /// This is the Insight API command for getting the object types in a schema.
+        /// Should the insight command structure change, you need to modify this field for continuing support in future versions.
+        /// </summary>
+        public readonly string schemaResource = "objectschema/3/objecttypes/flat";
+        /// <summary>
+        /// This is the Insight API command for getting an IQL response.
+        /// Should the insight command structure change, you need to modify this field for continuing support in future versions.
+        /// </summary>
+        public readonly string iqlResource = "iql/objects?objectSchemaId=3&iql=";
+        /// <value> This value indicates if an authentication error occured while creating an insight client </value>
+        public string AuthenticationTest = "";
         /// <summary>
         /// Constructs a client to communicate with insight
         /// </summary>
@@ -39,7 +55,7 @@ namespace InsightClientLibrary
         {
             POPName = PopName;
             debug = _debug;
-            InitLogger(debug);
+            logger = NLog.LogManager.GetCurrentClassLogger();
             InsightRestClient = GetDefaultClient();
             CreateSchemaGraph(3);
         }
@@ -48,18 +64,20 @@ namespace InsightClientLibrary
         /// </summary>
         /// Constructs a client to communicate with insight
         /// <param name="debug"> will run the program with debug messages accordingly</param>
-        /// <param name="client"> the client to perform actions in this code, in case you wish to use an ecternal RestSharp client</param>
+        /// <param name="username"> the username for insight login</param>
+        /// <param name="password"> the password for insight login</param>
         /// <param name="PopName"> the name of the pop that creates this client</param>
-        public InsightClient(bool debug, RestClient client, string PopName)
+        public InsightClient(bool debug,string PopName, string username, string password)
         {
-            InitLogger(debug);
-            if (client != null)
+            InsightRestClient = GetClient(username, password);
+            logger = NLog.LogManager.GetCurrentClassLogger();
+
+            if (InsightRestClient != null)
             {
                 try
                 {
-                    client.BaseUrl = new Uri("https://jira.mx1.com/rest/insight/1.0/objectschema/3/objecttypes/flat");
-                    RestRequest request = new RestRequest(Method.GET);
-                    var response = client.Execute(request);
+                    RestRequest request = new RestRequest("objectschema/3/objecttypes/flat",Method.GET);
+                    var response = InsightRestClient.Execute(request);
                     if (response.ErrorException != null)
                     {
                         logger.Error("Client failed Insight validity test, due to the following exception:\n" + response.ErrorException.Message);
@@ -74,8 +92,6 @@ namespace InsightClientLibrary
                     else
                     {
                         POPName = PopName;
-                        InitLogger(debug);
-                        InsightRestClient = client;
                         CreateSchemaGraph(3);
                     }
 
@@ -92,6 +108,31 @@ namespace InsightClientLibrary
                 logger.Error(message);
                 throw new Exception(message);
             }
+        }
+        /// <summary>
+        /// Creates a logger for a class
+        /// </summary>
+        /// <param name="debug"></param>
+        /// <returns></returns>
+        public NLog.Logger InitLogger(bool debug)
+        {
+            var config = new NLog.Config.LoggingConfiguration();
+
+            // Targets where to log to: File and Console
+            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = @"D:\Amir\Log.txt" };
+
+            // Rules for mapping loggers to targets            
+            if (debug)
+            {
+                config.AddRule(LogLevel.Trace, LogLevel.Fatal, logfile);
+            }
+            else config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
+
+
+            // Apply config           
+            NLog.LogManager.Configuration = config;
+            NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+            return logger;
         }
         /// <summary>
         /// Goes over all the elements in the graph, for each element check the incoming elements in Insight database and in the built graph route.
@@ -155,9 +196,9 @@ namespace InsightClientLibrary
             }
             return ans;
         }
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        #pragma warning disable CS1591
         public Dictionary<string, List<ObjectType>> GetObjectGroups()
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+        #pragma warning restore CS1591
         {
             return ObjectGroups;
         }
@@ -169,61 +210,55 @@ namespace InsightClientLibrary
         /// <returns>Grapgh which represents the service element route</returns>
         public ServiceGraph GetServiceGraph(string uuid)
         {
-            IqlApiResult serviceResult = GetInsightObjectByName(uuid, "Root", "Service");
-            IqlApiResult elementResult = GetInsightOutBoundByObjectName(uuid, "Element");
-            ServiceGraph graph = new ServiceGraph(elementResult, serviceResult, debug, uuid);
-            if (graph != null && graph.constructorSuceeded)
+            string originalUUID = uuid;
+            try
             {
-                return graph;
-            }
-            else
-            {
-                logger.Error("graph construction failed");
-                return null;
-            }
-        }
-        /// <summary>
-        /// Method to extract list of names from an excel file
-        /// </summary>
-        /// <param name="excelFilenameXlsx">Name of the file</param>
-        /// <param name="nameColoumn">the number of the cloumn containing the names in the excel file</param>
-        /// <param name="uuidstartingRow">the rwo from which the count begins from, for instance the first row can be a subject row</param>
-        /// <returns></returns>
-        public String ReadNameFromExcelFile(string excelFilenameXlsx, int nameColoumn, int uuidstartingRow)
-        {
-            String uuidBuffer = "";
+                // check if the uuid contains illegal characters and remove them
+                uuid = Tools.ModifyUnspportedInsightNameConvention(uuid, forbiddenInsightApiQuerySymbols);
+                logger.Debug("The original uuid provided for this build: {0}", originalUUID);
+                logger.Debug("The modified uuid created for this build: {0}", uuid);
 
-            Excel.Application xlApp = new Excel.Application();
-            Excel.Workbook xlWorkbook = xlApp.Workbooks.Open(Path.Combine(Directory.GetCurrentDirectory(), excelFilenameXlsx), 0, true, 5, "", "", false, Excel.XlPlatform.xlWindows, "\t", false, false, 0, true, 1, 0);
-            Excel._Worksheet xlWorksheet = (Excel._Worksheet)xlWorkbook.Sheets[1];
-            Excel.Range xlRange = xlWorksheet.UsedRange;
-            string uuid = "";
-            if (xlApp == null || xlWorkbook == null || xlWorksheet == null || xlRange == null)
-            {
-                logger.Error("Error with the Excel file");
-                return "";
-            }
-            else
-            {
-                for (int i = uuidstartingRow; i <= xlRange.Rows.Count; i++)
+                // Check if the IQL result are legal
+                IqlApiResult serviceResult = GetInsightObjectByName(uuid, "Root", "Service");
+                IqlApiResult elementResult = GetInsightOutBoundByObjectName(uuid, "Element");
+                if (!Tools.IsValidIqlResult(serviceResult) || !Tools.IsValidIqlResult(elementResult))
                 {
+                    throw new CorruptedInsightData(uuid);
+                }
+                // if there is more than one service or none that are matching the given uuid, 
+                // it must mean that the uuid contains an illegal naming conevtion, which gave false positive results after the name modification
+                if (serviceResult.objectEntries.Count != 1)
+                {
+                    throw new IllegalNameException(uuid);
+                }
 
-                    var val = ((Excel.Range)xlRange.Cells[i, nameColoumn]);
-                    //write the value to the console
-                    if (val != null && val.Value2 != null)
-                    {
-                        uuid = val.Value2.ToString();
-                        if (uuid.Contains("+"))
-                        {
-                            uuid = uuid.Substring(uuid.IndexOf('+') + 1);
-                        }
-                        uuid = "\"" + uuid + "\"";
-                        uuidBuffer += uuid;
-                    }
+                // From here the code logic starts
+                ServiceGraph graph = new ServiceGraph(elementResult, serviceResult, debug, uuid);
+                if (graph != null && graph.constructorSuceeded)
+                {
+                    return graph;
+                }
+                else
+                {
+                    logger.Error("graph construction failed");
+                    return null;
                 }
             }
-
-            return uuidBuffer;
+            catch (IllegalNameException e)
+            {
+                logger.Error(e.Message);
+                throw e;
+            }
+            catch (InsighClientLibraryUnknownError e)
+            {
+                logger.Fatal(e.Message);
+                throw e;
+            }
+            catch (CorruptedInsightData e)
+            {
+                logger.Error(e.Message);
+                throw e;
+            }
         }
         /// <summary>
         /// Goes over the schema data from insight and create groups to an accesible member
@@ -232,6 +267,10 @@ namespace InsightClientLibrary
         {
             ObjectGroups = new Dictionary<string, List<ObjectType>>();
             ObjectType[] objectTypeList = GetInsightObjectTypeList(schemaId);
+            if (!AuthenticationTest.Equals("OK"))
+            {
+                return;
+            }
             List<ObjectType> objectList = new List<ObjectType>(objectTypeList);
             ObjectType root = null;
             List<ObjectType> remaining = new List<ObjectType>();
@@ -306,30 +345,26 @@ namespace InsightClientLibrary
         /// <returns>array of <see cref="ObjectType"/>ObjectType/></returns>
         public ObjectType[] GetInsightObjectTypeList(int schemaID)
         {
-            string schemaquery = "objectschema/" + schemaID + "objecttypes/flat";
-            RestRequest request = new RestRequest(schemaquery, Method.GET);
-            var response = InsightRestClient.Execute(request);
-            string statusCode = response.StatusCode.ToString();
-            return JsonConvert.DeserializeObject<ObjectType[]>(response.Content);
-        }
-        private void InitLogger(bool debug)
-        {
-            var config = new NLog.Config.LoggingConfiguration();
-
-            // Targets where to log to: File and Console
-            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = "Log.txt" };
-
-            // Rules for mapping loggers to targets            
-            if (debug)
+            try
             {
-                config.AddRule(LogLevel.Debug, LogLevel.Fatal, logfile);
+                string schemaquery = "objectschema/" + schemaID + "/objecttypes/flat";
+                RestRequest request = new RestRequest(schemaquery, Method.GET);
+                var response = InsightRestClient.Execute(request);
+                string statusCode = response.StatusCode.ToString();
+                if (statusCode.Equals("Unauthorized"))
+                {
+                    AuthenticationTest = "Unauthorized";
+                    throw new Exception("The user set for this operation in not authorized with insight");
+                }
+                AuthenticationTest = statusCode;
+                return JsonConvert.DeserializeObject<ObjectType[]>(response.Content);
             }
-            else config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
-
-
-            // Apply config           
-            NLog.LogManager.Configuration = config;
-            logger = NLog.LogManager.GetCurrentClassLogger();
+            catch (Exception e)
+            {
+                logger.Fatal("Fatal error while communicating with Insight API:\n" + e.Message);
+                return null;
+            }
+            
         }
         /// <summary>
         /// return a lient using the credentails of the MUC generic user
@@ -337,25 +372,23 @@ namespace InsightClientLibrary
         /// <returns></returns>
         public RestClient GetDefaultClient()
         {
-            return GetClient("dataminer_muc", "SAz{ 2YY3SQeThh }:","User-Agent", "DataMiner");
+            return GetClient("dataminer_muc", "SAz{ 2YY3SQeThh }:");
         }
         /// <summary>
         /// 
         /// </summary>
         /// <param name="username"> Insight valid username</param>
         /// <param name="password"> Insight valid password</param>
-        /// <param name="agentType"> optional agent type</param>
-        /// <param name="agentName">optional agent name</param>
         /// <returns> A new rest client initialized using the given parameters</returns>
-        public RestClient GetClient(string username, string password, string agentType, string agentName)
+        public RestClient GetClient(string username, string password)
         {
             try
             {
                 InsightRestClient = new RestClient();
-                InsightRestClient.BaseUrl = new Uri("https://jira.mx1.com/rest/insight/1.0/");
+                InsightRestClient.BaseUrl = new Uri(InsightApiServerAdress);
                 InsightRestClient.Authenticator = new HttpBasicAuthenticator(username, password);
                 InsightRestClient.Timeout = 30000;
-                InsightRestClient.AddDefaultHeader(agentType, agentName);
+                InsightRestClient.AddDefaultHeader("User-Agent", "DataMiner");
                 return InsightRestClient;
             }
             catch (Exception e)
@@ -467,7 +500,6 @@ namespace InsightClientLibrary
         /// <returns>Insight object containing the data from Insight</returns>
         public IqlApiResult InsightGetByGeneralIqlQuery(string iqlQuery)
         {
-            string iqlResource = "iql / objects ? objectSchemaId = 3 & iql =";
             var response = ExecuteGetResponse(iqlResource + iqlQuery);
             return JsonConvert.DeserializeObject<IqlApiResult>(response.Content);
         }
@@ -510,47 +542,6 @@ namespace InsightClientLibrary
                 logger.Error(e.Message);
                 return null;
             }
-        }
-        /// <summary>
-        /// Checks the given name for illegal Insight API symbols.
-        /// </summary>
-        /// <param name="name">the name to check for valid characters</param>
-        /// <returns>modified name with no illegal characters, will be an empty string in case too many invalid characters exist</returns>
-        public string ModifyUnspportedInsightNameConvention(string name)
-        {
-            string nameToModify = name;
-            logger.Debug("Name to modify: {0}", name);
-
-            if (name.Length < 6)
-            {
-                nameToModify = "";
-            }
-            else
-            {
-                // trim forcidden chars from the beginning and End of the name
-                while (nameToModify.Length > 0 && forbiddenInsightApiQuerySymbols.Contains(nameToModify[0].ToString()))
-                {
-                    nameToModify = nameToModify.Substring(1);
-
-                }
-                while (nameToModify.Length > 0 && forbiddenInsightApiQuerySymbols.Contains(nameToModify[0].ToString()))
-                {
-                    nameToModify = nameToModify.Substring(0, nameToModify.Length - 1);
-                }
-
-                // anymore trimming and we cannot guarantee that the name will be unique which will lead to false positive results.
-                // Therefore, if there are anymore forbbiden symbols remaining in the name, we will return the empty string "".
-                foreach (char forbbidenSymbol in forbiddenInsightApiQuerySymbols)
-                {
-                    if (nameToModify.Contains(forbbidenSymbol.ToString()))
-                    {
-                        nameToModify = "";
-                        break;
-                    }
-                }
-            }
-            logger.Debug("Modified name: {0}", nameToModify);
-            return nameToModify;
         }
     }
 }

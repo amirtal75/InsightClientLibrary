@@ -5,44 +5,86 @@ using NLog;
 namespace InsightClientLibrary
 {
     /// <summary>
-    /// Class with methods used to extract dta for locking elements in a corresponding equipment
+    /// Class with methods used to extract data for locking elements in a corresponding equipment
     /// </summary>
     public class ServiceLocker
     {
-        #pragma warning disable CS1591
-        public NLog.Logger logger;
-        #pragma warning restore CS1591
-        #pragma warning disable CS1591
-        public string pop;
-        #pragma warning restore CS1591
-        #pragma warning disable CS1591
-        public InsightClient client;
-        #pragma warning restore CS1591
+
+        private NLog.Logger logger;
+        private string pop;
+        private InsightClient client;
         private string LastLockedUUID;
-        #pragma warning disable CS1591
-        public bool debug = false;
-        #pragma warning restore CS1591
-        #pragma warning disable CS1591
-        public ServiceGraph LastSerachedUuidGraph;
-        #pragma warning restore CS1591
+        private bool debug = false;
+        private ServiceGraph lastSerachedUuidGraph;
+        private bool clientAuthenticated = true;
+
         /// <summary>
         /// Constructor for getting a service locker.
         /// </summary>
         /// <param name="_debug"> should the program run in debug mode</param>
         /// <param name="pop">the name of the pop the script runs for</param>
-        /// <param name="client"> the client which will be used to perform the actions</param>
-        public ServiceLocker(bool _debug, string pop, InsightClient client)
+        /// <param name="username">the username for Insight login</param>
+        /// <param name="password">the password for Insight login</param>
+        public ServiceLocker(bool _debug, string pop,string username, string password)
         {
-            LastLockedUUID = "";
+            LastLockedUUID1 = "";
             LastSerachedUuidGraph = null;
-            debug = _debug;
-            InitLogger(debug);
-            this.client = client;
-            this.pop = pop;
-
+            Debug = _debug;
+            logger = NLog.LogManager.GetCurrentClassLogger();
+            this.Client = new InsightClient(Debug, pop, username,password);
+            this.Pop = pop;
         }
+        /// <summary>
+        /// Creates a logger for a class
+        /// </summary>
+        /// <param name="debug"></param>
+        /// <param name="className"></param>
+        /// <returns></returns>
+        public NLog.Logger InitLogger(bool debug, string className)
+        {
+            var config = new NLog.Config.LoggingConfiguration();
 
-        #pragma warning disable CS1572 // XML comment has a param tag, but there is no parameter by that name
+            // Targets where to log to: File and Console
+            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = @"D:\Amir\Log.txt" };
+
+            // Rules for mapping loggers to targets            
+            if (debug)
+            {
+                config.AddRule(LogLevel.Trace, LogLevel.Fatal, logfile);
+            }
+            else config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
+
+
+            // Apply config           
+            NLog.LogManager.Configuration = config;
+            //NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+            NLog.Logger logger = NLog.LogManager.GetLogger(className);
+            return logger;
+        }
+        /// <summary>
+        /// The pop the service is bieng locked for
+        /// </summary>
+        public string Pop { get => pop; set => pop = value; }
+        /// <summary>
+        /// the insight client created for the use of the service locker
+        /// </summary>
+        public InsightClient Client { get => client; set => client = value; }
+        /// <summary>
+        /// the last uuid locked by this locker
+        /// </summary>
+        public string LastLockedUUID1 { get => LastLockedUUID; set => LastLockedUUID = value; }
+        /// <summary>
+        /// Whether the service locker runs in debug mode
+        /// </summary>
+        public bool Debug { get => debug; set => debug = value; }
+        /// <summary>
+        /// the graph built for the last loced uuid
+        /// </summary>
+        public ServiceGraph LastSerachedUuidGraph { get => lastSerachedUuidGraph; set => lastSerachedUuidGraph = value; }
+        /// <summary>
+        /// Whether the credentials provided for the client are valid Insight credentials.
+        /// </summary>
+        public bool ClientAuthenticated { get => clientAuthenticated; set => clientAuthenticated = value; }
         /// <summary>
         /// Constructor for getting a service locker.
         /// </summary>
@@ -50,14 +92,92 @@ namespace InsightClientLibrary
         /// <param name="pop">the name of the pop the script runs for</param>
         public ServiceLocker(bool _debug, string pop)
         {
-            LastLockedUUID = "";
+            LastLockedUUID1 = "";
             LastSerachedUuidGraph = null;
-            debug = _debug;
-            InitLogger(debug);
-            this.client = new InsightClient(debug,pop);
-            this.pop = pop;
+            Debug = _debug;
+            logger = NLog.LogManager.GetCurrentClassLogger();
+            this.Client = new InsightClient(Debug,pop);
+            if (!Client.AuthenticationTest.Equals("OK"))
+            {
+                ClientAuthenticated = false;
+                return;
+            }
+            this.Pop = pop;
 
         }
+
+        
+        private List<LockableElement> GetSourceLockElement(string uuid, string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel, GraphElement source)
+        {
+            List<GraphElement> list = new List<GraphElement>();
+            List<LockableElement> answer = new List<LockableElement>();
+            List<LockableElement> toremove = new List<LockableElement>();
+
+            try
+            {
+                if (lastSerachedUuidGraph == null || lastSerachedUuidGraph.Sources == null)
+                {
+                    return null;
+                }
+                list = new List<GraphElement>();
+                list.Add(source);
+                var graphLockables = lastSerachedUuidGraph.getLockableElements(list, Pop);
+                List<GraphElement> nextLockables = new List<GraphElement>(graphLockables);
+                LockableElement toLock;
+                while (nextLockables.Count > 0)
+                {
+                    graphLockables = nextLockables;
+                    nextLockables = new List<GraphElement>();
+                    toremove = new List<LockableElement>();
+                    foreach (var lockable in graphLockables)
+                    {
+                        toLock = GetLockElement(destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, lastSerachedUuidGraph, source, lockable);
+                        if (toLock != null)
+                        {
+                            answer.Add(toLock);
+                        }
+                    }
+                    foreach (var lockableElement in answer)
+                    {
+                        if (!ValidLockElement(lockableElement))
+                        {
+                            toremove.Add(lockableElement);
+                            if (lockableElement.lockableElement.OutgoingElements != null && lockableElement.lockableElement.OutgoingElements.Count > 0)
+                            {
+                                nextLockables.AddRange(lastSerachedUuidGraph.FindMinLength(lockableElement.lockableElement.OutgoingElements));
+                            }
+                        }
+                    }
+                    foreach (var item in toremove)
+                    {
+                        answer.Remove(item);
+                    }
+                    if (answer.Count > 0)
+                    {
+                        return answer;
+                    }
+                }
+            }
+            catch (IllegalNameException e)
+            {
+                logger.Error(e.Message);
+                throw e;
+            }
+            catch (InsighClientLibraryUnknownError e)
+            {
+                logger.Fatal(e.Message);
+                throw e;
+            }
+            catch (CorruptedInsightData e)
+            {
+                logger.Error(e.Message);
+                throw e;
+            }
+
+
+            return answer;
+        }
+
         /// <summary>
         /// Get a lock element for each source that exists for the given uuid
         /// </summary>
@@ -66,29 +186,70 @@ namespace InsightClientLibrary
         /// <param name="destinationIrdName"></param>
         /// <param name="destinationIrdModel"></param>
         /// <returns></returns>
-        public List<LockableElement> GetSourceLockElement(string uuid, string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel)
+        public Dictionary<GraphElement,List<LockableElement>> GetSourcesLockElement(string uuid, string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel)
         {
             LastLockedUUID = uuid;
-            List<LockableElement> answer = new List<LockableElement>();
-            ServiceGraph graph = client.GetServiceGraph(uuid);
-            LastSerachedUuidGraph = graph;
-            if (graph == null || graph.Sources == null)
+            try
             {
-                return null;
-            }
-            foreach (var source in graph.Sources)
-            {
-                if (source != null)
+                ServiceGraph graph = client.GetServiceGraph(uuid);
+                lastSerachedUuidGraph = graph;
+                Dictionary<GraphElement, List<LockableElement>> answer = new Dictionary<GraphElement, List<LockableElement>>();
+                foreach (var source in graph.Sources)
                 {
-                    LockableElement toLock = GetLockElement(destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, graph, source);
-                    if (toLock != null)
-                    {
-                        answer.Add(toLock);
-                    }
+                    answer.Add(source, GetSourceLockElement(uuid, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, source));
+                }
+                return answer;
+            }
+            catch (IllegalNameException e)
+            {
+                logger.Error(e.Message);
+                throw e;
+            }
+            catch (InsighClientLibraryUnknownError e)
+            {
+                logger.Fatal(e.Message);
+                throw e;
+            }
+
+        }
+        private static bool ValidLockElement(LockableElement toLock)
+        {
+
+            bool answer = false;
+            bool legalMulticast = false;
+            bool downlinkSymbolRate = true;
+            bool modulation = true;
+            bool transponder = true;
+            bool downlinkPolarity = true;
+            bool downlinkSatellite = true;
+            if (toLock.GetType() == typeof(IPLockableElement))
+            {
+                IPLockableElement iPLockable = (IPLockableElement)toLock;
+                answer =  Tools.LegalIPV4(iPLockable.multicastMain) || Tools.LegalIPV4(iPLockable.multicastBackup);
+            }
+            else if (toLock.GetType() == typeof(RFLockableElement))
+            {
+                RFLockableElement rfLockable = (RFLockableElement)toLock;
+                downlinkSymbolRate = !rfLockable.downlinkSymbolRate.Equals("");
+                modulation = !rfLockable.modulation.Equals("");
+                transponder = !rfLockable.transponder.Equals("");
+                downlinkPolarity = !rfLockable.downlinkPolarity.Equals("");
+                downlinkSatellite = !rfLockable.downlinkSatellite.Equals("");
+
+                if (toLock.GetType() == typeof(MultiLockableElement))
+                {
+                    MultiLockableElement multiLockable = (MultiLockableElement)toLock;
+                    legalMulticast = Tools.LegalIPV4(multiLockable.multicastMain) || Tools.LegalIPV4(multiLockable.multicastBackup);
+                    answer = legalMulticast || (downlinkSymbolRate && modulation && transponder && downlinkPolarity && downlinkSatellite);
+                }
+                else
+                {
+                    answer = downlinkSymbolRate && modulation && transponder && downlinkPolarity && downlinkSatellite;
                 }
             }
             return answer;
         }
+
         /// <summary>
         /// parse the given data to lockable and readable parameters
         /// </summary>
@@ -96,9 +257,10 @@ namespace InsightClientLibrary
         /// <param name="destinationIrdName"></param>
         /// <param name="destinationIrdModel"></param>
         /// <param name="graph"></param>
+        /// <param name="source"></param>
         /// <param name="elementToLock"></param>
         /// <returns></returns>
-        public LockableElement GetLockElement(string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel, ServiceGraph graph, GraphElement elementToLock)
+        public LockableElement GetLockElement(string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel, ServiceGraph graph, GraphElement source, GraphElement elementToLock)
         {
             LockableElement answer = null;
 
@@ -144,6 +306,7 @@ namespace InsightClientLibrary
             serviceID = "";
             attributeName = "";
 
+            Dictionary<int, string> attributeTypeNames = new Dictionary<int, string>();
 
             string elementType = elementToLock.CurrentElement.objectType.name;
             string elementName = elementToLock.CurrentElement.name;
@@ -153,6 +316,7 @@ namespace InsightClientLibrary
             {
                 if (attribute.ObjectAttributeValues != null && attribute.ObjectAttributeValues.Count > 0)
                 {
+                    attributeName = elementToLock.ObjectAttributeTypesById[attribute.objectTypeAttributeId];
                     switch (elementType.ToLower())
                     {
                         case "downlink":
@@ -248,7 +412,7 @@ namespace InsightClientLibrary
                                     break;
                             }
                             break;
-                        
+
                         case "encoding":
                             switch (attributeName)
                             {
@@ -415,7 +579,7 @@ namespace InsightClientLibrary
             {
                 logger.Debug("Given Element: {0}, Multilockable returned.", elementType);
                 multiLockable = new MultiLockableElement(multicastEHAMain, multicastEHABackup, sourceIPMain, sourceIPBackup, downlinkFrequency, modulation, downlinkPolarity,
-                                downlinkSatellite, downlinkSymbolRate, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, pop.ToLower(), serviceID, elementType, elementName);
+                                downlinkSatellite, downlinkSymbolRate, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
                 answer = multiLockable;
                 logger.Debug("\nlockable element parameters:\n" + multiLockable.ToString());
 
@@ -423,48 +587,27 @@ namespace InsightClientLibrary
             else if (elementType.Equals("Uplink"))
             {
                 logger.Debug("Given Element: {0}, RFLockable returned.", elementType);
-                rFLockable = new RFLockableElement(downlinkFrequency, modulation, downlinkPolarity, downlinkSatellite, downlinkSymbolRate, destinationIrdManagmentIp, 
-                                                    destinationIrdName, destinationIrdModel, pop.ToLower(), serviceID, elementType, elementName);
+                rFLockable = new RFLockableElement(downlinkFrequency, modulation, downlinkPolarity, downlinkSatellite, downlinkSymbolRate, destinationIrdManagmentIp,
+                                                    destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
                 answer = rFLockable;
                 logger.Debug("\nlockable element parameters:\n" + rFLockable.ToString());
             }
             else
             {
                 logger.Debug("Given Element: {0}, IPLockable returned.", elementType);
-                if (pop.ToLower().Equals("eha"))
+                if (Pop.ToLower().Equals("eha"))
                 {
-                    iPLockable = new IPLockableElement(multicastEHAMain, multicastEHABackup, sourceIPMain, sourceIPBackup, destinationIrdName, destinationIrdName, destinationIrdModel, pop.ToLower(), serviceID, elementType, elementName);
+                    iPLockable = new IPLockableElement(multicastEHAMain, multicastEHABackup, sourceIPMain, sourceIPBackup, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
                 }
-                else if (pop.ToLower().Equals("muc"))
+                else if (Pop.ToLower().Equals("muc"))
                 {
-                    iPLockable = new IPLockableElement(multicastMUC, "", sourceIPMain, sourceIPBackup, destinationIrdName, destinationIrdName, destinationIrdModel, pop.ToLower(), serviceID, elementType, elementName);
+                    iPLockable = new IPLockableElement(multicastMUC, "", sourceIPMain, sourceIPBackup, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
                 }
                 answer = iPLockable;
                 logger.Debug("\nlockable element parameters:\n" + iPLockable.ToString());
             }
             return answer;
         }
-        private void InitLogger(bool debug)
-        {
-            var config = new NLog.Config.LoggingConfiguration();
-
-            // Targets where to log to: File and Console
-            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = @"D:\Amir\Log.txt" }
-            ;
-
-            // Rules for mapping loggers to targets            
-            if (debug)
-            {
-                config.AddRule(LogLevel.Debug, LogLevel.Fatal, logfile);
-            }
-            else config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
-
-
-            // Apply config           
-            NLog.LogManager.Configuration = config;
-            logger = NLog.LogManager.GetCurrentClassLogger(); logger.Info("Log Start");
-        }
-
     }
     /// <summary>
     /// RFLockableElement is a class for locking an RF input
@@ -501,11 +644,11 @@ namespace InsightClientLibrary
         /// <param name="destinationIrdModel"></param>
         /// <param name="pop"></param>
         /// <param name="serviceID"></param>
-        /// <param name="elementName"></param>
-        /// <param name="elementType"></param>
+        /// <param name="source"></param>
+        /// <param name="lockableElement"></param>
         public RFLockableElement(string downlinkFrequency, string modulation, string downlinkPolarity, string downlinkSatellite, string downlinkSymbolRate,
-                                 string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel, string pop, string serviceID, string elementName, string elementType) :
-                                        base(destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, pop, serviceID, elementName, elementType)
+                                 string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel, string pop, string serviceID, GraphElement source, GraphElement lockableElement) :
+                                        base(destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, pop, serviceID, source, lockableElement)
         {
             this.downlinkLocalOsscilator = new List<string>();
             try
@@ -544,19 +687,27 @@ namespace InsightClientLibrary
             this.downlinkSymbolRate = downlinkSymbolRate;
 
         }
-        string downlinkFrequency { get; set; }
-        List<string> downlinkLocalOsscilator { get; set; }
-        string modulation { get; set; }
-        string downlinkPolarity { get; set; }
-        string downlinkSatellite { get; set; }
-        string downlinkSymbolRate { get; set; }
-        string downlinkFEC { get; set; }
-        string downlinkRollOff { get; set; }
-        string transponder { get; set; }
-
-#pragma warning disable CS1591
+        /// <summary> </summary>
+        public string downlinkFrequency { get; set; }
+        /// <summary> </summary>
+        public List<string> downlinkLocalOsscilator { get; set; }
+        /// <summary> </summary>
+        public string modulation { get; set; }
+        /// <summary> </summary>
+        public string downlinkPolarity { get; set; }
+        /// <summary> </summary>
+        public string downlinkSatellite { get; set; }
+        /// <summary> </summary>
+        public string downlinkSymbolRate { get; set; }
+        /// <summary> </summary>
+        public string downlinkFEC { get; set; }
+        /// <summary> </summary>
+        public string downlinkRollOff { get; set; }
+        /// <summary> </summary>
+        public string transponder { get; set; }
+        /// <summary> </summary>
         public override bool Equals(object obj)
-#pragma warning restore CS1591
+
         {
             return obj is RFLockableElement element &&
                    base.Equals(obj) &&
@@ -567,9 +718,11 @@ namespace InsightClientLibrary
                    downlinkSymbolRate == element.downlinkSymbolRate;
         }
 
-#pragma warning disable CS1591
+        /// <summary>
+        /// 
+        /// </summary>
         public override int GetHashCode()
-#pragma warning restore CS1591
+
         {
             int hashCode = -701880288;
             hashCode = hashCode * -1521134295 + base.GetHashCode();
@@ -581,9 +734,9 @@ namespace InsightClientLibrary
             return hashCode;
         }
 
-#pragma warning disable CS1591
+        /// <summary> </summary>
         public override string ToString()
-#pragma warning restore CS1591
+
         {
             return base.ToString() + 
                 "downlinkFrequency: " + downlinkFrequency + "\n" +
@@ -600,25 +753,29 @@ namespace InsightClientLibrary
     /// </summary>
     public class IPLockableElement : LockableElement
     {
-#pragma warning disable CS1591
+        /// <summary> </summary>
         public IPLockableElement(string multicastMain, string multicastBackup, string sourceIpMain, string sourceIpBU, string destinationIrdManagmentIp,
-#pragma warning restore CS1591
-            string destinationIrdName, string destinationIrdModel, string pop, string serviceID, string elementName, string elementType) :
-                                        base(destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, pop, serviceID, elementName, elementType)
+
+            string destinationIrdName, string destinationIrdModel, string pop, string serviceID, GraphElement source, GraphElement lockableElement) :
+                                        base(destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, pop, serviceID, source, lockableElement)
         {
             this.multicastMain = multicastMain;
             this.multicastBackup = multicastBackup;
             this.sourceIpMain = sourceIpMain;
             this.sourceIpBU = sourceIpBU;
         }
-        string multicastMain { get; set; }
-        string multicastBackup { get; set; }
-        string sourceIpMain { get; set; }
-        string sourceIpBU { get; set; }
+        /// <summary> </summary>
+        public string multicastMain { get; set; }
+        /// <summary> </summary>
+        public string multicastBackup { get; set; }
+        /// <summary> </summary>
+        public string sourceIpMain { get; set; }
+        /// <summary> </summary>
+        public string sourceIpBU { get; set; }
 
-#pragma warning disable CS1591
+        /// <summary> </summary>
+        /// <returns></returns>
         public override bool Equals(object obj)
-#pragma warning restore CS1591
         {
             return obj is IPLockableElement element &&
                    base.Equals(obj) &&
@@ -627,10 +784,10 @@ namespace InsightClientLibrary
                    sourceIpMain == element.sourceIpMain &&
                    sourceIpBU == element.sourceIpBU;
         }
-
-#pragma warning disable CS1591
+        /// <summary> </summary>
+        /// <returns></returns>
         public override int GetHashCode()
-#pragma warning restore CS1591
+
         {
             int hashCode = -704129115;
             hashCode = hashCode * -1521134295 + base.GetHashCode();
@@ -640,10 +797,9 @@ namespace InsightClientLibrary
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(sourceIpBU);
             return hashCode;
         }
-
-#pragma warning disable CS1591
+        /// <summary> </summary>
         public override string ToString()
-#pragma warning restore CS1591
+
         {
             return base.ToString() +
                 "multicastMain: " + multicastMain + "\n" +
@@ -657,13 +813,16 @@ namespace InsightClientLibrary
     /// </summary>
     public class MultiLockableElement : RFLockableElement
     {
-#pragma warning disable CS1591
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public MultiLockableElement(string multicastMain, string multicastBackup, string sourceIpMain, string sourceIpBU, string downlinkFrequency, string modulation, string downlinkPolarity,
-#pragma warning restore CS1591
+
                                     string downlinkSatellite, string downlinkSymbolRate, string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel, string pop,
-                                    string serviceID, string elementName, string elementType) :
+                                    string serviceID, GraphElement source, GraphElement elementToLock) :
                                         base(downlinkFrequency, modulation, downlinkPolarity, downlinkSatellite, downlinkSymbolRate,
-                                        destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, pop, serviceID, elementName, elementType)
+                                        destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, pop, serviceID, source, elementToLock)
         {
             this.multicastMain = multicastMain;
             this.multicastBackup = multicastBackup;
@@ -671,15 +830,18 @@ namespace InsightClientLibrary
             this.sourceIpBU = sourceIpBU;
 
         }
+        /// <summary> </summary>
+        public string multicastMain { get; set; }
+        /// <summary> </summary>
+        public string multicastBackup { get; set; }
+        /// <summary> </summary>
+        public string sourceIpMain { get; set; }
+        /// <summary> </summary>
+        public string sourceIpBU { get; set; }
 
-        string multicastMain { get; set; }
-        string multicastBackup { get; set; }
-        string sourceIpMain { get; set; }
-        string sourceIpBU { get; set; }
-
-#pragma warning disable CS1591
+        /// <summary> </summary>
+        /// <returns></returns>
         public override bool Equals(object obj)
-#pragma warning restore CS1591
         {
             return obj is MultiLockableElement element &&
                    base.Equals(obj) &&
@@ -688,10 +850,10 @@ namespace InsightClientLibrary
                    sourceIpMain == element.sourceIpMain &&
                    sourceIpBU == element.sourceIpBU;
         }
-
-#pragma warning disable CS1591
+        /// <summary> </summary>
+        /// <returns></returns>
         public override int GetHashCode()
-#pragma warning restore CS1591
+
         {
             int hashCode = -704129115;
             hashCode = hashCode * -1521134295 + base.GetHashCode();
@@ -701,10 +863,10 @@ namespace InsightClientLibrary
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(sourceIpBU);
             return hashCode;
         }
-
-#pragma warning disable CS1591
+        /// <summary> </summary>
+        /// <returns></returns>
         public override string ToString()
-#pragma warning restore CS1591
+
         {
             return base.ToString() +
                 "multicastMain: " + multicastMain + "\n" +
@@ -717,28 +879,60 @@ namespace InsightClientLibrary
     /// abstract base class for a lockable element
     /// </summary>
     public abstract class LockableElement
-    {
-#pragma warning disable CS1591
-        protected LockableElement(string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel, string pop, string serviceID, string elementName, string elementType)
-#pragma warning restore CS1591
+    {   
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="destinationIrdManagmentIp"></param>
+        /// <param name="destinationIrdName"></param>
+        /// <param name="destinationIrdModel"></param>
+        /// <param name="pop"></param>
+        /// <param name="serviceID"></param>
+        /// <param name="source"></param>
+        /// <param name="_lockableElement"></param>
+        protected LockableElement(string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel, string pop, string serviceID, GraphElement source, GraphElement _lockableElement)
+
         {
             this.destinationIrdManagmentIp = destinationIrdManagmentIp;
             this.destinationIrdName = destinationIrdName;
             this.destinationIrdModel = destinationIrdModel;
             this.pop = pop;
+            this.sourceElement = source;
+            this.lockableElement = _lockableElement;
             this.serviceID = serviceID;
+            this.elementName = lockableElement.CurrentElement.name;
+            this.elementType = lockableElement.CurrentElement.objectType.name;
         }
-        string pop { get; set; }
-        string destinationIrdManagmentIp { get; set; }
-        string elementName { get; set; }
-        string elementType { get; set; }
-        string destinationIrdName { get; set; }
-        string destinationIrdModel { get; set; }
-        string serviceID { get; set; }
-
-#pragma warning disable CS1591
+        /// <summary>
+        /// 
+        /// </summary>
+        public GraphElement sourceElement { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public GraphElement lockableElement { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string pop { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string destinationIrdManagmentIp { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string elementName { get; set; }
+        /// <summary> </summary>
+        public string elementType { get; set; }
+        /// <summary> </summary>
+        public string destinationIrdName { get; set; }
+        /// <summary> </summary>
+        public string destinationIrdModel { get; set; }
+        /// <summary> </summary>
+        public string serviceID { get; set; }
+        /// <summary> </summary>
         public override bool Equals(object obj)
-#pragma warning restore CS1591
         {
             return obj is LockableElement element &&
                    pop == element.pop &&
@@ -749,10 +943,8 @@ namespace InsightClientLibrary
                    destinationIrdModel == element.destinationIrdModel &&
                    serviceID == element.serviceID;
         }
-
-#pragma warning disable CS1591
+        /// <summary> </summary>
         public override int GetHashCode()
-#pragma warning restore CS1591
         {
             int hashCode = 453849517;
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(pop);
@@ -764,13 +956,16 @@ namespace InsightClientLibrary
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(serviceID);
             return hashCode;
         }
-
-#pragma warning disable CS1591
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
-#pragma warning restore CS1591
         {
             return "Element Name: " + elementName + "\n" +
                 "Element Type: " + elementType + "\n" +
+                "Source Element Name: " + sourceElement.CurrentElement.name + "\n" +
+                "Source Element Type: " + sourceElement.CurrentElement.objectType.name + "\n" +
                 "POP: " + pop + "\n" +
                 "Receiver Name: " + destinationIrdName + "\n" +
                 "Receiver Model: " + destinationIrdModel + "\n" +

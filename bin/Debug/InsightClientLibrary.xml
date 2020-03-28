@@ -6,8 +6,74 @@
     <members>
         <member name="T:InsightClientLibrary.Service">
             <summary>
-            Represent teh majority of the field in a service found in the insight database
+            Represent the majority of the field in a service found in the insight database
             </summary>
+        </member>
+        <member name="F:InsightClientLibrary.Service.AttributeNamesByIds">
+            <summary> </summary>
+        </member>
+        <member name="F:InsightClientLibrary.Service.AttributeIdsByNames">
+            <summary> </summary>
+        </member>
+        <member name="F:InsightClientLibrary.Service.AttributeByIds">
+            <summary> </summary>
+        </member>
+        <member name="F:InsightClientLibrary.Service.AttributeTypesByIds">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Service.Key">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Service.Name">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Service.ConfluenceURL">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Service.Status">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Service.BroadcastTime">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Service.ClientVPN">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Service.UUID">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Service.ServiceOwner">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Service.ContentType">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Service.ServiceCategory">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Service.DistributionChannel">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Service.ServiceGroupe">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Service.ServiceRole">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Service.ServiceRemarks">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Service.StartofService">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Service.EndofService">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Service.ServiceDocumentationApproved">
+            <summary> </summary>
+        </member>
+        <member name="M:InsightClientLibrary.Service.#ctor(InsightClientLibrary.IqlApiResult,NLog.Logger,System.String)">
+            <summary> </summary>
         </member>
         <member name="T:InsightClientLibrary.Tools">
             <summary>
@@ -23,17 +89,618 @@
             <param name="uuidstartingRow">the rwo from which the count begins from, for instance the first row can be a subject row</param>
             <returns></returns>
         </member>
-        <member name="M:InsightClientLibrary.Tools.InitLogger(System.Boolean,System.String)">
+        <member name="M:InsightClientLibrary.Tools.IsValidIqlResult(InsightClientLibrary.IqlApiResult)">
             <summary>
-            Creates a logger for a class
+            Check if the IQl result and its members are not null.
+            Such a case can happen if there is an error with the confluence route of the service due to uncorrect relationships between Inisght objects.
             </summary>
-            <param name="debug"></param>
-            <param name="className"></param>
+            <param name="result"></param>
+            <returns></returns>
+        </member>
+        <member name="M:InsightClientLibrary.Tools.ModifyUnspportedInsightNameConvention(System.String,System.String)">
+            <summary>
+            Checks the given name for illegal Insight API symbols.
+            </summary>
+            <param name="name">the name to check for valid characters</param>
+            <param name="forbiddenInsightApiQuerySymbols">the the insight API forbideen symbols</param>
+            <returns>modified name with no illegal characters, will be an empty string in case too many invalid characters exist</returns>
+        </member>
+        <member name="M:InsightClientLibrary.Tools.LegalIPV4(System.String)">
+            <summary>
+            Checks if the given string is a legal IPV4 adress.
+            </summary>
+            <param name="ip"></param>
             <returns></returns>
         </member>
         <member name="T:InsightClientLibrary.GraphElement">
             <summary>
             Represents an element in a graph, akeen to a node in a bydirectional linked list
+            </summary>
+        </member>
+        <member name="M:InsightClientLibrary.GraphElement.#ctor(InsightClientLibrary.ObjectEntry,System.Int32,System.Collections.Generic.Dictionary{System.Int32,System.String})">
+            <summary> </summary>
+        </member>
+        <member name="F:InsightClientLibrary.GraphElement.ObjectAttributeTypesById">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.GraphElement.CurrentElement">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.GraphElement.IncomingElements">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.GraphElement.OutgoingElements">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.GraphElement.graphLength">
+            <summary> </summary>
+        </member>
+        <member name="M:InsightClientLibrary.GraphElement.AddOutgoingElement(InsightClientLibrary.GraphElement)">
+            <summary> </summary>
+        </member>
+        <member name="M:InsightClientLibrary.GraphElement.AddIncomingElement(InsightClientLibrary.GraphElement)">
+            <summary> </summary>
+        </member>
+        <member name="M:InsightClientLibrary.GraphElement.Equals(System.Object)">
+            <summary> </summary>
+        </member>
+        <member name="M:InsightClientLibrary.GraphElement.GetHashCode">
+            <summary> </summary>
+        </member>
+        <member name="M:InsightClientLibrary.GraphElement.Update">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.ApplicationEntry">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ApplicationEntry.name">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ApplicationEntry.type">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ApplicationEntry.typeValue">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ApplicationEntry.additionalValue">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.ConfluenceSpace">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ConfluenceSpace.name">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ConfluenceSpace.type">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ConfluenceSpace.typeValue">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ConfluenceSpace.additionalValue">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.ObjectTypeAttribute">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.additionalValue">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.created">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.defaultType">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.description">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.hidden">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.id">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.includeChildObjectTypes">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.iql">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.Label">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.maximumCardinality">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.minimumCardinality">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.name">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.ObjectTypeId">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.options">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.position">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.referenceObjectTypeId">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.referenceTypeId">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.regexValidation">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.removable">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.suffix">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.summable">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.type">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.typevalue">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.uniqueAttribute">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.updated">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.confluenceAddValue">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.confluenceTypeValue">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.editable">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.objectAttributeExists">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.referenceObjectType">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.referenceType">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.sortable">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.system">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectTypeAttribute.typeValue">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.ObjectType">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectType.id">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectType.name">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectType.type">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectType.icon">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectType.position">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectType.created">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectType.updated">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectType.objectCount">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectType.parentObjectTypeId">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectType.objectSchemaId">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectType.inherited">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectType.abstractObjectType">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectType.parentObjectTypeInherited">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectType.description">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.Icon">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Icon.id">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Icon.name">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Icon.url16">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Icon.url48">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary._Links">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary._Links.self">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.ObjectEntry">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectEntry.id">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectEntry.objectTypeId">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectEntry.label">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectEntry.objectKey">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectEntry.avatar">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectEntry.objectType">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectEntry.created">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectEntry.updated">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectEntry.hasAvatar">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectEntry.timestamp">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectEntry.attributes">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectEntry._links">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectEntry.name">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectEntry.objectHistory">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectEntry.comment">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectEntry.jiraIssue">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectEntry.objectWatch">
+            <summary> </summary>
+        </member>
+        <member name="M:InsightClientLibrary.ObjectEntry.Equals(System.Object)">
+            <summary> </summary>
+        </member>
+        <member name="M:InsightClientLibrary.ObjectEntry.GetHashCode">
+            <summary> </summary>
+        </member>
+        <member name="M:InsightClientLibrary.ObjectEntry.ToString">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.ObjectJiraIssue">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectJiraIssue.customFieldId">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectJiraIssue.id">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectJiraIssue.jiraIssueId">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectJiraIssue.objectId">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.Comment">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Comment.author">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Comment.comment">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Comment.created">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Comment.id">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Comment.role">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Comment.updated">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Comment.objectId">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.ObjectWatch">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectWatch.userKey">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectWatch.id">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectWatch.objectId">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.ObjectAttachment">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttachment.author">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttachment.comment">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttachment.created">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttachment.filename">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttachment.filesize">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttachment.id">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttachment.mimeType">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttachment.nameInFileSystem">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttachment.objectId">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.ObjectHistory">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectHistory.ActorUserKey">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectHistory.AffectedAttribute">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectHistory.id">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectHistory.insightVersion">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectHistory.newKeyValues">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectHistory.newValue">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectHistory.objectId">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectHistory.ObjectTypeAttributeId">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectHistory.oldKeyValues">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectHistory.oldValue">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectHistory.type">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.Avatar">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Avatar.url16">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Avatar.url48">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Avatar.url72">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Avatar.url144">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Avatar.url288">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.Avatar.objectId">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.DefaultType">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.DefaultType.typeId">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.DefaultType.typeName">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.ObjectAttribute">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttribute.id">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttribute.objectId">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttribute.objectTypeAttributeId">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttribute.ObjectAttributeValues">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttribute.hidden">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.ObjectAttributeValue">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttributeValue.value">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttributeValue.displayValue">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttributeValue.additionalValue">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttributeValue.id">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttributeValue.objectAttributeId">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttributeValue.referencedObjectId">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ObjectAttributeValue.referencedObject">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.ReferenceType">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ReferenceType.id">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ReferenceType.name">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ReferenceType.color">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ReferenceType.url116">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ReferenceType.removable">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ReferenceType.objectSchemaId">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.IqlApiResult">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IqlApiResult.objectEntries">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IqlApiResult.objectTypeAttributes">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IqlApiResult.objectTypeId">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IqlApiResult.objectTypeIsInherited">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IqlApiResult.abstractObjectType">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IqlApiResult.totalFilterCount">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IqlApiResult.startIndex">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IqlApiResult.toIndex">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IqlApiResult.pageObjectSize">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IqlApiResult.pageNumber">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IqlApiResult.orderWay">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IqlApiResult.iql">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IqlApiResult.iqlSearchResult">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IqlApiResult.conversionPossible">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IqlApiResult.pageSize">
+            <summary> </summary>
+        </member>
+        <member name="T:InsightClientLibrary.IllegalNameException">
+            <summary>
+            Illegal UUID Exception Class
+            </summary>
+        </member>
+        <member name="M:InsightClientLibrary.IllegalNameException.#ctor(System.String)">
+            <summary>
+            Constructs exception for unsupported UUID convention
+            </summary>
+        </member>
+        <member name="T:InsightClientLibrary.InsighClientLibraryUnknownError">
+            <summary>
+            Illegal UUID Exception Class
+            </summary>
+        </member>
+        <member name="M:InsightClientLibrary.InsighClientLibraryUnknownError.#ctor(System.String)">
+            <summary>
+            Constructs exception for unsupported UUID convention
+            </summary>
+        </member>
+        <member name="T:InsightClientLibrary.CorruptedInsightData">
+            <summary>
+            Exception for when the IQl result and its members are null.
+            Such a case can happen if there is an error with the confluence route of the service due to uncorrect relationships between Inisght objects.
+            </summary>
+        </member>
+        <member name="M:InsightClientLibrary.CorruptedInsightData.#ctor(System.String)">
+            <summary>
+            Constructs exception for unsupported UUID convention
             </summary>
         </member>
         <member name="F:InsightClientLibrary.InsightClient.debug">
@@ -51,7 +718,28 @@
             <value>this value contains all object groups in the schema</value>
         </member>
         <member name="F:InsightClientLibrary.InsightClient.forbiddenInsightApiQuerySymbols">
-            <value> This value wdescribes symbols that Insight API considers illegal in a request </value>
+            <value> This value describes symbols that Insight API considers illegal in a request </value>
+        </member>
+        <member name="F:InsightClientLibrary.InsightClient.InsightApiServerAdress">
+            <summary>
+            This is the Insight API API server adress.
+            Should the insight command structure change, you need to modify this field for continuing support in future versions.
+            </summary>
+        </member>
+        <member name="F:InsightClientLibrary.InsightClient.schemaResource">
+            <summary>
+            This is the Insight API command for getting the object types in a schema.
+            Should the insight command structure change, you need to modify this field for continuing support in future versions.
+            </summary>
+        </member>
+        <member name="F:InsightClientLibrary.InsightClient.iqlResource">
+            <summary>
+            This is the Insight API command for getting an IQL response.
+            Should the insight command structure change, you need to modify this field for continuing support in future versions.
+            </summary>
+        </member>
+        <member name="F:InsightClientLibrary.InsightClient.AuthenticationTest">
+            <value> This value indicates if an authentication error occured while creating an insight client </value>
         </member>
         <member name="M:InsightClientLibrary.InsightClient.#ctor(System.Boolean,System.String)">
             <summary>
@@ -60,14 +748,22 @@
             <param name="_debug"> will run the program with debug messages accordingly</param>
             <param name="PopName"> the name of the pop that creates this client</param>
         </member>
-        <member name="M:InsightClientLibrary.InsightClient.#ctor(System.Boolean,RestSharp.RestClient,System.String)">
+        <member name="M:InsightClientLibrary.InsightClient.#ctor(System.Boolean,System.String,System.String,System.String)">
             <summary>
             Constructs a client to communicate with insight
             </summary>
             Constructs a client to communicate with insight
             <param name="debug"> will run the program with debug messages accordingly</param>
-            <param name="client"> the client to perform actions in this code, in case you wish to use an ecternal RestSharp client</param>
+            <param name="username"> the username for insight login</param>
+            <param name="password"> the password for insight login</param>
             <param name="PopName"> the name of the pop that creates this client</param>
+        </member>
+        <member name="M:InsightClientLibrary.InsightClient.InitLogger(System.Boolean)">
+            <summary>
+            Creates a logger for a class
+            </summary>
+            <param name="debug"></param>
+            <returns></returns>
         </member>
         <member name="M:InsightClientLibrary.InsightClient.VerifyValidRoute(InsightClientLibrary.ServiceGraph)">
             <summary>
@@ -83,15 +779,6 @@
             </summary>
             <param name="uuid"> The uuid that we want to get a graph/route for</param>
             <returns>Grapgh which represents the service element route</returns>
-        </member>
-        <member name="M:InsightClientLibrary.InsightClient.ReadNameFromExcelFile(System.String,System.Int32,System.Int32)">
-            <summary>
-            Method to extract list of names from an excel file
-            </summary>
-            <param name="excelFilenameXlsx">Name of the file</param>
-            <param name="nameColoumn">the number of the cloumn containing the names in the excel file</param>
-            <param name="uuidstartingRow">the rwo from which the count begins from, for instance the first row can be a subject row</param>
-            <returns></returns>
         </member>
         <member name="M:InsightClientLibrary.InsightClient.CreateSchemaGraph(System.Int32)">
             <summary>
@@ -110,14 +797,12 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:InsightClientLibrary.InsightClient.GetClient(System.String,System.String,System.String,System.String)">
+        <member name="M:InsightClientLibrary.InsightClient.GetClient(System.String,System.String)">
             <summary>
             
             </summary>
             <param name="username"> Insight valid username</param>
             <param name="password"> Insight valid password</param>
-            <param name="agentType"> optional agent type</param>
-            <param name="agentName">optional agent name</param>
             <returns> A new rest client initialized using the given parameters</returns>
         </member>
         <member name="M:InsightClientLibrary.InsightClient.GetInsightObjectByName(System.String,System.String)">
@@ -192,13 +877,6 @@
             <param name="resource">the insight query</param>
             <returns>returns a response conatining the data according to the request</returns>
         </member>
-        <member name="M:InsightClientLibrary.InsightClient.ModifyUnspportedInsightNameConvention(System.String)">
-            <summary>
-            Checks the given name for illegal Insight API symbols.
-            </summary>
-            <param name="name">the name to check for valid characters</param>
-            <returns>modified name with no illegal characters, will be an empty string in case too many invalid characters exist</returns>
-        </member>
         <member name="T:InsightClientLibrary.ServiceGraph">
             <summary>
             Represent a service graph for a uuid
@@ -241,7 +919,7 @@
             <value>Dictionary containing the names of all the atribute types in the graph</value>
         </member>
         <member name="F:InsightClientLibrary.ServiceGraph.constructorSuceeded">
-            <value>bool value indicating a succesfull and valid graph build</value>
+            <value>bool value indicating a completley succesfull and valid graph build</value>
         </member>
         <member name="F:InsightClientLibrary.ServiceGraph.ElementMemberIsNull">
             <value>bool value indicating a partially succesfull graph build with an invalid member</value>
@@ -254,6 +932,13 @@
             <param name="service">the service get API result</param>
             <param name="_debug"> indicated whether the program should run in debug mode</param>
             <param name="uuid"> the name of the service to build a graph for</param>
+        </member>
+        <member name="M:InsightClientLibrary.ServiceGraph.InitLogger(System.Boolean)">
+            <summary>
+            Creates a logger for a class
+            </summary>
+            <param name="debug"></param>
+            <returns></returns>
         </member>
         <member name="M:InsightClientLibrary.ServiceGraph.PrintGraph">
             <summary>
@@ -291,16 +976,55 @@
         </member>
         <member name="T:InsightClientLibrary.ServiceLocker">
             <summary>
-            Class with methods used to extract dta for locking elements in a corresponding equipment
+            Class with methods used to extract data for locking elements in a corresponding equipment
             </summary>
         </member>
-        <member name="M:InsightClientLibrary.ServiceLocker.#ctor(System.Boolean,System.String,InsightClientLibrary.InsightClient)">
+        <member name="M:InsightClientLibrary.ServiceLocker.#ctor(System.Boolean,System.String,System.String,System.String)">
             <summary>
             Constructor for getting a service locker.
             </summary>
             <param name="_debug"> should the program run in debug mode</param>
             <param name="pop">the name of the pop the script runs for</param>
-            <param name="client"> the client which will be used to perform the actions</param>
+            <param name="username">the username for Insight login</param>
+            <param name="password">the password for Insight login</param>
+        </member>
+        <member name="M:InsightClientLibrary.ServiceLocker.InitLogger(System.Boolean,System.String)">
+            <summary>
+            Creates a logger for a class
+            </summary>
+            <param name="debug"></param>
+            <param name="className"></param>
+            <returns></returns>
+        </member>
+        <member name="P:InsightClientLibrary.ServiceLocker.Pop">
+            <summary>
+            The pop the service is bieng locked for
+            </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ServiceLocker.Client">
+            <summary>
+            the insight client created for the use of the service locker
+            </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ServiceLocker.LastLockedUUID1">
+            <summary>
+            the last uuid locked by this locker
+            </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ServiceLocker.Debug">
+            <summary>
+            Whether the service locker runs in debug mode
+            </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ServiceLocker.LastSerachedUuidGraph">
+            <summary>
+            the graph built for the last loced uuid
+            </summary>
+        </member>
+        <member name="P:InsightClientLibrary.ServiceLocker.ClientAuthenticated">
+            <summary>
+            Whether the credentials provided for the client are valid Insight credentials.
+            </summary>
         </member>
         <member name="M:InsightClientLibrary.ServiceLocker.#ctor(System.Boolean,System.String)">
             <summary>
@@ -309,7 +1033,7 @@
             <param name="_debug"> should the program run in debug mode</param>
             <param name="pop">the name of the pop the script runs for</param>
         </member>
-        <member name="M:InsightClientLibrary.ServiceLocker.GetSourceLockElement(System.String,System.String,System.String,System.String)">
+        <member name="M:InsightClientLibrary.ServiceLocker.GetSourcesLockElement(System.String,System.String,System.String,System.String)">
             <summary>
             Get a lock element for each source that exists for the given uuid
             </summary>
@@ -319,7 +1043,7 @@
             <param name="destinationIrdModel"></param>
             <returns></returns>
         </member>
-        <member name="M:InsightClientLibrary.ServiceLocker.GetLockElement(System.String,System.String,System.String,InsightClientLibrary.ServiceGraph,InsightClientLibrary.GraphElement)">
+        <member name="M:InsightClientLibrary.ServiceLocker.GetLockElement(System.String,System.String,System.String,InsightClientLibrary.ServiceGraph,InsightClientLibrary.GraphElement,InsightClientLibrary.GraphElement)">
             <summary>
             parse the given data to lockable and readable parameters
             </summary>
@@ -327,6 +1051,7 @@
             <param name="destinationIrdName"></param>
             <param name="destinationIrdModel"></param>
             <param name="graph"></param>
+            <param name="source"></param>
             <param name="elementToLock"></param>
             <returns></returns>
         </member>
@@ -335,7 +1060,7 @@
             RFLockableElement is a class for locking an RF input
             </summary>
         </member>
-        <member name="M:InsightClientLibrary.RFLockableElement.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String)">
+        <member name="M:InsightClientLibrary.RFLockableElement.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,InsightClientLibrary.GraphElement,InsightClientLibrary.GraphElement)">
             <summary>
             Constructor for an RF lock, parameters are self explanatory
             </summary>
@@ -349,23 +1074,178 @@
             <param name="destinationIrdModel"></param>
             <param name="pop"></param>
             <param name="serviceID"></param>
-            <param name="elementName"></param>
-            <param name="elementType"></param>
+            <param name="source"></param>
+            <param name="lockableElement"></param>
+        </member>
+        <member name="P:InsightClientLibrary.RFLockableElement.downlinkFrequency">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.RFLockableElement.downlinkLocalOsscilator">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.RFLockableElement.modulation">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.RFLockableElement.downlinkPolarity">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.RFLockableElement.downlinkSatellite">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.RFLockableElement.downlinkSymbolRate">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.RFLockableElement.downlinkFEC">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.RFLockableElement.downlinkRollOff">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.RFLockableElement.transponder">
+            <summary> </summary>
+        </member>
+        <member name="M:InsightClientLibrary.RFLockableElement.Equals(System.Object)">
+            <summary> </summary>
+        </member>
+        <member name="M:InsightClientLibrary.RFLockableElement.GetHashCode">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:InsightClientLibrary.RFLockableElement.ToString">
+            <summary> </summary>
         </member>
         <member name="T:InsightClientLibrary.IPLockableElement">
             <summary>
             IPLockableElement is a class for locking an IP input
             </summary>
         </member>
+        <member name="M:InsightClientLibrary.IPLockableElement.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,InsightClientLibrary.GraphElement,InsightClientLibrary.GraphElement)">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IPLockableElement.multicastMain">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IPLockableElement.multicastBackup">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IPLockableElement.sourceIpMain">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.IPLockableElement.sourceIpBU">
+            <summary> </summary>
+        </member>
+        <member name="M:InsightClientLibrary.IPLockableElement.Equals(System.Object)">
+            <summary> </summary>
+            <returns></returns>
+        </member>
+        <member name="M:InsightClientLibrary.IPLockableElement.GetHashCode">
+            <summary> </summary>
+            <returns></returns>
+        </member>
+        <member name="M:InsightClientLibrary.IPLockableElement.ToString">
+            <summary> </summary>
+        </member>
         <member name="T:InsightClientLibrary.MultiLockableElement">
             <summary>
             MultiLockableElement is a class for locking an element with noth an IP and RF parameters, like a downlink element with an outgoing multicast
             </summary>
         </member>
+        <member name="M:InsightClientLibrary.MultiLockableElement.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,InsightClientLibrary.GraphElement,InsightClientLibrary.GraphElement)">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:InsightClientLibrary.MultiLockableElement.multicastMain">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.MultiLockableElement.multicastBackup">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.MultiLockableElement.sourceIpMain">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.MultiLockableElement.sourceIpBU">
+            <summary> </summary>
+        </member>
+        <member name="M:InsightClientLibrary.MultiLockableElement.Equals(System.Object)">
+            <summary> </summary>
+            <returns></returns>
+        </member>
+        <member name="M:InsightClientLibrary.MultiLockableElement.GetHashCode">
+            <summary> </summary>
+            <returns></returns>
+        </member>
+        <member name="M:InsightClientLibrary.MultiLockableElement.ToString">
+            <summary> </summary>
+            <returns></returns>
+        </member>
         <member name="T:InsightClientLibrary.LockableElement">
             <summary>
             abstract base class for a lockable element
             </summary>
+        </member>
+        <member name="M:InsightClientLibrary.LockableElement.#ctor(System.String,System.String,System.String,System.String,System.String,InsightClientLibrary.GraphElement,InsightClientLibrary.GraphElement)">
+            <summary>
+            
+            </summary>
+            <param name="destinationIrdManagmentIp"></param>
+            <param name="destinationIrdName"></param>
+            <param name="destinationIrdModel"></param>
+            <param name="pop"></param>
+            <param name="serviceID"></param>
+            <param name="source"></param>
+            <param name="_lockableElement"></param>
+        </member>
+        <member name="P:InsightClientLibrary.LockableElement.sourceElement">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:InsightClientLibrary.LockableElement.lockableElement">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:InsightClientLibrary.LockableElement.pop">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:InsightClientLibrary.LockableElement.destinationIrdManagmentIp">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:InsightClientLibrary.LockableElement.elementName">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:InsightClientLibrary.LockableElement.elementType">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.LockableElement.destinationIrdName">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.LockableElement.destinationIrdModel">
+            <summary> </summary>
+        </member>
+        <member name="P:InsightClientLibrary.LockableElement.serviceID">
+            <summary> </summary>
+        </member>
+        <member name="M:InsightClientLibrary.LockableElement.Equals(System.Object)">
+            <summary> </summary>
+        </member>
+        <member name="M:InsightClientLibrary.LockableElement.GetHashCode">
+            <summary> </summary>
+        </member>
+        <member name="M:InsightClientLibrary.LockableElement.ToString">
+            <summary>
+            
+            </summary>
+            <returns></returns>
         </member>
     </members>
 </doc>
