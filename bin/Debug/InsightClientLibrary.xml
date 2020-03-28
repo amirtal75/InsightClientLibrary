@@ -682,23 +682,63 @@
             Constructs exception for unsupported UUID convention
             </summary>
         </member>
-        <member name="T:InsightClientLibrary.InsighClientLibraryUnknownError">
+        <member name="T:InsightClientLibrary.InsighClientLibraryUnknownErrorException">
             <summary>
             Illegal UUID Exception Class
             </summary>
         </member>
-        <member name="M:InsightClientLibrary.InsighClientLibraryUnknownError.#ctor(System.String)">
+        <member name="M:InsightClientLibrary.InsighClientLibraryUnknownErrorException.#ctor(System.String)">
             <summary>
             Constructs exception for unsupported UUID convention
             </summary>
         </member>
-        <member name="T:InsightClientLibrary.CorruptedInsightData">
+        <member name="T:InsightClientLibrary.CorruptedInsightDataException">
             <summary>
             Exception for when the IQl result and its members are null.
             Such a case can happen if there is an error with the confluence route of the service due to uncorrect relationships between Inisght objects.
             </summary>
         </member>
-        <member name="M:InsightClientLibrary.CorruptedInsightData.#ctor(System.String)">
+        <member name="M:InsightClientLibrary.CorruptedInsightDataException.#ctor(System.String)">
+            <summary>
+            Constructs exception for unsupported UUID convention
+            </summary>
+        </member>
+        <member name="T:InsightClientLibrary.InsightUserAthenticationException">
+            <summary>
+            Exception to be thrown when the credentails cannot be authenticated in front of Insight database
+            </summary>
+        </member>
+        <member name="M:InsightClientLibrary.InsightUserAthenticationException.#ctor(System.String)">
+            <summary>
+            Constructs exception for unsupported UUID convention
+            </summary>
+        </member>
+        <member name="T:InsightClientLibrary.DuplicateElementException">
+            <summary>
+            In case in the future i will want to raise duplicate element exception
+            </summary>
+        </member>
+        <member name="M:InsightClientLibrary.DuplicateElementException.#ctor(System.String)">
+            <summary>
+            Constructs exception for unsupported UUID convention
+            </summary>
+        </member>
+        <member name="T:InsightClientLibrary.RestSharpException">
+            <summary>
+            To raise when getting restsharp exception
+            </summary>
+        </member>
+        <member name="M:InsightClientLibrary.RestSharpException.#ctor(System.String)">
+            <summary>
+            Constructs exception for unsupported UUID convention
+            </summary>
+        </member>
+        <member name="T:InsightClientLibrary.UnsuccessfullResponseException">
+            <summary>
+            To raise when getting restsharp exception
+            </summary>
+        </member>
+        <member name="M:InsightClientLibrary.UnsuccessfullResponseException.#ctor(System.String)">
             <summary>
             Constructs exception for unsupported UUID convention
             </summary>
@@ -758,13 +798,6 @@
             <param name="password"> the password for insight login</param>
             <param name="PopName"> the name of the pop that creates this client</param>
         </member>
-        <member name="M:InsightClientLibrary.InsightClient.InitLogger(System.Boolean)">
-            <summary>
-            Creates a logger for a class
-            </summary>
-            <param name="debug"></param>
-            <returns></returns>
-        </member>
         <member name="M:InsightClientLibrary.InsightClient.VerifyValidRoute(InsightClientLibrary.ServiceGraph)">
             <summary>
             Goes over all the elements in the graph, for each element check the incoming elements in Insight database and in the built graph route.
@@ -780,12 +813,12 @@
             <param name="uuid"> The uuid that we want to get a graph/route for</param>
             <returns>Grapgh which represents the service element route</returns>
         </member>
-        <member name="M:InsightClientLibrary.InsightClient.CreateSchemaGraph(System.Int32)">
+        <member name="M:InsightClientLibrary.InsightClient.CreateSchemaGraph(System.Int32,System.String)">
             <summary>
             Goes over the schema data from insight and create groups to an accesible member
             </summary>
         </member>
-        <member name="M:InsightClientLibrary.InsightClient.GetInsightObjectTypeList(System.Int32)">
+        <member name="M:InsightClientLibrary.InsightClient.GetInsightObjectTypeList(System.Int32,System.String)">
             <summary>
              Gets all object types conatained in a schema
             </summary>
@@ -933,13 +966,6 @@
             <param name="_debug"> indicated whether the program should run in debug mode</param>
             <param name="uuid"> the name of the service to build a graph for</param>
         </member>
-        <member name="M:InsightClientLibrary.ServiceGraph.InitLogger(System.Boolean)">
-            <summary>
-            Creates a logger for a class
-            </summary>
-            <param name="debug"></param>
-            <returns></returns>
-        </member>
         <member name="M:InsightClientLibrary.ServiceGraph.PrintGraph">
             <summary>
             print the graph elements by layers, each layer cntains elements of the same length
@@ -987,14 +1013,6 @@
             <param name="pop">the name of the pop the script runs for</param>
             <param name="username">the username for Insight login</param>
             <param name="password">the password for Insight login</param>
-        </member>
-        <member name="M:InsightClientLibrary.ServiceLocker.InitLogger(System.Boolean,System.String)">
-            <summary>
-            Creates a logger for a class
-            </summary>
-            <param name="debug"></param>
-            <param name="className"></param>
-            <returns></returns>
         </member>
         <member name="P:InsightClientLibrary.ServiceLocker.Pop">
             <summary>
@@ -1060,7 +1078,7 @@
             RFLockableElement is a class for locking an RF input
             </summary>
         </member>
-        <member name="M:InsightClientLibrary.RFLockableElement.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,InsightClientLibrary.GraphElement,InsightClientLibrary.GraphElement)">
+        <member name="M:InsightClientLibrary.RFLockableElement.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,InsightClientLibrary.GraphElement,InsightClientLibrary.GraphElement)">
             <summary>
             Constructor for an RF lock, parameters are self explanatory
             </summary>
@@ -1068,6 +1086,9 @@
             <param name="modulation"></param>
             <param name="downlinkPolarity"></param>
             <param name="downlinkSatellite"></param>
+            <param name="transponder"></param>
+            <param name="downlinkFEC"></param>
+            <param name="downlinkRollOff"></param>
             <param name="downlinkSymbolRate"></param>
             <param name="destinationIrdManagmentIp"></param>
             <param name="destinationIrdName"></param>
@@ -1151,7 +1172,7 @@
             MultiLockableElement is a class for locking an element with noth an IP and RF parameters, like a downlink element with an outgoing multicast
             </summary>
         </member>
-        <member name="M:InsightClientLibrary.MultiLockableElement.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,InsightClientLibrary.GraphElement,InsightClientLibrary.GraphElement)">
+        <member name="M:InsightClientLibrary.MultiLockableElement.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,InsightClientLibrary.GraphElement,InsightClientLibrary.GraphElement)">
             <summary>
             
             </summary>

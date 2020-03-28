@@ -119,36 +119,15 @@ namespace InsightClientLibrary
 
             this.constructorSuceeded = initSuccess && incominElementSuccess && soureSetSuccess && buildGraphSuccess;
         }
-        /// <summary>
-        /// Creates a logger for a class
-        /// </summary>
-        /// <param name="debug"></param>
-        /// <returns></returns>
-        public NLog.Logger InitLogger(bool debug)
-        {
-            var config = new NLog.Config.LoggingConfiguration();
-
-            // Targets where to log to: File and Console
-            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = @"D:\Amir\Log.txt" };
-
-            // Rules for mapping loggers to targets            
-            if (debug)
-            {
-                config.AddRule(LogLevel.Trace, LogLevel.Fatal, logfile);
-            }
-            else config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
-
-
-            // Apply config           
-            NLog.LogManager.Configuration = config;
-            NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-            return logger;
-        }
         private void InitData()
         {
             for (int i = 0; i < this.RouteElements.Count; i++)
             {
-                this.ServiceElementNameList.Add(RouteElements[i].name, i);
+                if (!this.ServiceElementNameList.ContainsKey(RouteElements[i].name))
+                {
+                    this.ServiceElementNameList.Add(RouteElements[i].name, i);
+                }
+                else logger.Error("The following element is duplicated: {0}", RouteElements[i].name);
                 if (RouteElements[i] != null && RouteElements[i].objectType != null && RouteElements[i].objectType.name.Equals("Monitoring"))
                 {
                     MonitoringElementIndex = i;
@@ -157,7 +136,11 @@ namespace InsightClientLibrary
 
             foreach (var attributeType in IqlApiResult.objectTypeAttributes)
             {
-                ObjectAttributeTypesById.Add(attributeType.id, attributeType.name);
+                if (!ObjectAttributeTypesById.ContainsKey(attributeType.id))
+                {
+                    ObjectAttributeTypesById.Add(attributeType.id, attributeType.name);
+                }
+                
             }
         }
         private void FindIncomingElements()

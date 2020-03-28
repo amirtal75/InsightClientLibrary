@@ -57,7 +57,18 @@ namespace InsightClientLibrary
             debug = _debug;
             logger = NLog.LogManager.GetCurrentClassLogger();
             InsightRestClient = GetDefaultClient();
-            CreateSchemaGraph(3);
+            try
+            {
+                CreateSchemaGraph(3, "dataminer_muc");
+            }
+            catch (InsightUserAthenticationException e)
+            {
+                throw e;
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
         }
         /// <summary>
         /// Constructs a client to communicate with insight
@@ -82,23 +93,38 @@ namespace InsightClientLibrary
                     {
                         logger.Error("Client failed Insight validity test, due to the following exception:\n" + response.ErrorException.Message);
                         logger.Error("Stack Trace:\n" + response.ErrorException.StackTrace);
-                        throw new Exception();
+                        throw new RestSharpException(response.ErrorException.Message);
                     }
                     else if (!response.IsSuccessful)
                     {
                         logger.Error("Client failed Insight validity test, due to the following details:\n" + response.Content + "\nStatus code:" + response.StatusCode);
-                        throw new Exception();
+                        throw new UnsuccessfullResponseException("Status code: " + response.StatusCode + ", Reponse content: " + response.Content);
                     }
                     else
                     {
                         POPName = PopName;
-                        CreateSchemaGraph(3);
+                        CreateSchemaGraph(3,username);
                     }
 
                 }
+                catch (InsightUserAthenticationException e)
+                {
+                    logger.Error(e.Message);
+                    throw e;
+                }
+                catch (RestSharpException e)
+                {
+                    logger.Error(e.Message);
+                    throw new RestSharpException(e.Message);
+                }
+                catch (UnsuccessfullResponseException e)
+                {
+                    logger.Error(e.Message);
+                    throw new UnsuccessfullResponseException(e.Message);
+                }
                 catch (Exception e)
                 {
-                    logger.Error("Client failed Insight validity test, due to a unknown issue");
+                    logger.Fatal("Client failed Insight validity test, due to a unknown issue");
                     throw new Exception(e.Message);
                 }
             }
@@ -110,31 +136,6 @@ namespace InsightClientLibrary
             }
         }
         /// <summary>
-        /// Creates a logger for a class
-        /// </summary>
-        /// <param name="debug"></param>
-        /// <returns></returns>
-        public NLog.Logger InitLogger(bool debug)
-        {
-            var config = new NLog.Config.LoggingConfiguration();
-
-            // Targets where to log to: File and Console
-            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = @"D:\Amir\Log.txt" };
-
-            // Rules for mapping loggers to targets            
-            if (debug)
-            {
-                config.AddRule(LogLevel.Trace, LogLevel.Fatal, logfile);
-            }
-            else config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
-
-
-            // Apply config           
-            NLog.LogManager.Configuration = config;
-            NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-            return logger;
-        }
-        /// <summary>
         /// Goes over all the elements in the graph, for each element check the incoming elements in Insight database and in the built graph route.
         /// If every grapgh element has the same incoming elements in both the graph route and Insight database, we can deduct that the graph is valid
         /// </summary>
@@ -143,55 +144,64 @@ namespace InsightClientLibrary
         public bool VerifyValidRoute(ServiceGraph graph)
         {
             bool ans = true;
-            List<string> graphElementNames = new List<string>();
-            List<string> insightElementNames = new List<string>();
+            List<string> graphElementNames = new List<string>(graph.ServiceElementNameList.Keys);
+            List<string> insightIncomingElementNames = new List<string>();
+            List<string> graphElementIncomingElementNames = new List<string>();
+
             // gather all name of the graph element list
             foreach (GraphElement graphElement in graph.graphElements)
             {
-                graphElementNames = new List<string>();
-                insightElementNames = new List<string>();
-                var InsightIncomingElements = GetInsightinBoundByObjectName(graphElement.CurrentElement.name, "Element");
+                insightIncomingElementNames = new List<string>();
+                graphElementIncomingElementNames = new List<string>();
+                var modifiedElementName = Tools.ModifyUnspportedInsightNameConvention(graphElement.CurrentElement.name, forbiddenInsightApiQuerySymbols);
+                var InsightIncomingElements = GetInsightinBoundByObjectName(modifiedElementName, "Element");
                 var GraphRouteIncomingElements = graphElement.IncomingElements;
-                foreach (GraphElement incomingElement in graph.graphElements)
-                {
-                    graphElementNames.Add(incomingElement.CurrentElement.name);
-                }
-                if (InsightIncomingElements == null || InsightIncomingElements.objectEntries == null || InsightIncomingElements.objectTypeAttributes == null)
+                if (!Tools.IsValidIqlResult(InsightIncomingElements))
                 {
                     logger.Debug("Error in the insight response received");
                     return false;
                 }
                 else if (InsightIncomingElements.objectEntries.Count != GraphRouteIncomingElements.Count)
                 {
-                    logger.Debug("The graph element: {0} has {1] incoming elements, while the insight has {2} incoming elements", graphElement.CurrentElement.name, InsightIncomingElements.objectEntries.Count, GraphRouteIncomingElements.Count);
-                    return false;
+                    foreach (var element in InsightIncomingElements.objectEntries)
+                    {
+                        if (element.name.Contains(graph.Service.UUID))
+                        {
+                            logger.Fatal("The graph element: {0} has {1] incoming elements, while the insight has {2} incoming elements", graphElement.CurrentElement.name, InsightIncomingElements.objectEntries.Count, GraphRouteIncomingElements.Count);
+                            return false;
+                        }
+                    }
                 }
                 else
                 {
-                    // gather all name of the insight element list
+                    // gather all name of the insight incoming element list and graph incoming element list
                     foreach (var entry in InsightIncomingElements.objectEntries)
                     {
-                        insightElementNames.Add(entry.name);
+                        insightIncomingElementNames.Add(entry.name);
                     }
-                    if (!insightElementNames.Contains(graphElement.CurrentElement.name))
+                    foreach (var incomingGraphElement in graphElement.IncomingElements)
                     {
-                        logger.Debug("The graph element: {0}, does not exist in the insight incoming element list", graphElement.CurrentElement.name);
-                        return false;
+                        graphElementIncomingElementNames.Add(incomingGraphElement.CurrentElement.name);
                     }
-                    else
+
+                    // According to the Discreet mathematics law of equality, if two sets A,B where A<=b and b<=A then A=B.
+                    // this is checked below for the incoming element found in inisght in comparison to the realtionship built in the graph route
+                    foreach (var incomingGraphElementName in graphElementIncomingElementNames)
                     {
-                        // we checked that the graph element exists in the InsightIncomingElements list.
-                        // if every element in the InsightIncomingElements list is also contained in the graph element list.
-                        // then accorsing to the rule of by directional containment the two lists are equal.
-                        foreach (var entry in InsightIncomingElements.objectEntries)
+                        if (insightIncomingElementNames.Count > 0 && !insightIncomingElementNames.Contains(incomingGraphElementName))
                         {
-                            if (!graphElementNames.Contains(entry.name))
-                            {
-                                logger.Debug("The graph element: {0} has a missing element: {1}", graphElement.CurrentElement.name, entry.name);
-                                return false;
-                            }
+                            logger.Error("The graph element: {0} has an extra element: {1}", graphElement.CurrentElement.name, incomingGraphElementName);
+                            return false;
                         }
                     }
+                    foreach (var incomingInsightElementName in insightIncomingElementNames)
+                    {
+                        if (graphElementIncomingElementNames.Count > 0 && !graphElementIncomingElementNames.Contains(incomingInsightElementName))
+                        {
+                            logger.Error("The graph element: {0} has a missing element: {1}", graphElement.CurrentElement.name, incomingInsightElementName);
+                            return false;
+                        }
+                    }   
                 }
             }
             return ans;
@@ -223,7 +233,7 @@ namespace InsightClientLibrary
                 IqlApiResult elementResult = GetInsightOutBoundByObjectName(uuid, "Element");
                 if (!Tools.IsValidIqlResult(serviceResult) || !Tools.IsValidIqlResult(elementResult))
                 {
-                    throw new CorruptedInsightData(uuid);
+                    throw new CorruptedInsightDataException(uuid);
                 }
                 // if there is more than one service or none that are matching the given uuid, 
                 // it must mean that the uuid contains an illegal naming conevtion, which gave false positive results after the name modification
@@ -249,101 +259,119 @@ namespace InsightClientLibrary
                 logger.Error(e.Message);
                 throw e;
             }
-            catch (InsighClientLibraryUnknownError e)
+            catch (InsighClientLibraryUnknownErrorException e)
             {
                 logger.Fatal(e.Message);
                 throw e;
             }
-            catch (CorruptedInsightData e)
+            catch (CorruptedInsightDataException e)
             {
                 logger.Error(e.Message);
+                throw e;
+            }
+            catch (Exception e)
+            {
+                logger.Fatal("Unknwon error: \n" + e.Message);
                 throw e;
             }
         }
         /// <summary>
         /// Goes over the schema data from insight and create groups to an accesible member
         /// </summary>
-        private void CreateSchemaGraph(int schemaId)
+        private void CreateSchemaGraph(int schemaId,string username)
         {
             ObjectGroups = new Dictionary<string, List<ObjectType>>();
-            ObjectType[] objectTypeList = GetInsightObjectTypeList(schemaId);
-            if (!AuthenticationTest.Equals("OK"))
+            ObjectType[] objectTypeList;
+            try
             {
-                return;
-            }
-            List<ObjectType> objectList = new List<ObjectType>(objectTypeList);
-            ObjectType root = null;
-            List<ObjectType> remaining = new List<ObjectType>();
-            foreach (var objectType in objectList)
-            {
-                if (!objectType.parentObjectTypeInherited)
+                objectTypeList = GetInsightObjectTypeList(schemaId, username);
+                if (!AuthenticationTest.Equals("OK"))
                 {
-                    root = objectType;
-                    ObjectGroups.Add("SuperRoot", new List<ObjectType>());
-                    ObjectGroups["SuperRoot"].Add(root);
+                    return;
                 }
-                else remaining.Add(objectType);
-            }
-
-            objectList = remaining;
-            remaining = new List<ObjectType>();
-            List<ObjectType> childGroup; ;
-            Dictionary<string, List<ObjectType>> NewObjectGroups;
-
-            while (objectList.Count > 1)
-            {
-                remaining = new List<ObjectType>();
-                childGroup = new List<ObjectType>();
-                NewObjectGroups = new Dictionary<string, List<ObjectType>>();
-                foreach (var parentGroup in ObjectGroups.Values)
+                List<ObjectType> objectList = new List<ObjectType>(objectTypeList);
+                ObjectType root = null;
+                List<ObjectType> remaining = new List<ObjectType>();
+                foreach (var objectType in objectList)
                 {
-                    foreach (ObjectType potentialParent in parentGroup)
+                    if (!objectType.parentObjectTypeInherited)
                     {
-                        foreach (ObjectType potentialChild in objectList)
+                        root = objectType;
+                        ObjectGroups.Add("SuperRoot", new List<ObjectType>());
+                        ObjectGroups["SuperRoot"].Add(root);
+                    }
+                    else remaining.Add(objectType);
+                }
+
+                objectList = remaining;
+                remaining = new List<ObjectType>();
+                List<ObjectType> childGroup; ;
+                Dictionary<string, List<ObjectType>> NewObjectGroups;
+
+                while (objectList.Count > 1)
+                {
+                    remaining = new List<ObjectType>();
+                    childGroup = new List<ObjectType>();
+                    NewObjectGroups = new Dictionary<string, List<ObjectType>>();
+                    foreach (var parentGroup in ObjectGroups.Values)
+                    {
+                        foreach (ObjectType potentialParent in parentGroup)
                         {
-                            int childParentTypeId = potentialChild.parentObjectTypeId;
-                            if (potentialParent.id == potentialChild.parentObjectTypeId && !potentialChild.name.Equals("CSV Import"))
+                            foreach (ObjectType potentialChild in objectList)
                             {
-                                if (ObjectGroups.ContainsKey(potentialParent.name))
+                                int childParentTypeId = potentialChild.parentObjectTypeId;
+                                if (potentialParent.id == potentialChild.parentObjectTypeId && !potentialChild.name.Equals("CSV Import"))
                                 {
-                                    ObjectGroups[potentialParent.name].Add(potentialChild);
-                                }
-                                else
-                                {
-                                    if (NewObjectGroups.ContainsKey(potentialParent.name))
+                                    if (ObjectGroups.ContainsKey(potentialParent.name))
                                     {
-                                        NewObjectGroups[potentialParent.name].Add(potentialChild);
+                                        ObjectGroups[potentialParent.name].Add(potentialChild);
                                     }
                                     else
                                     {
-                                        childGroup.Add(potentialChild);
-                                        NewObjectGroups.Add(potentialParent.name, childGroup);
-                                        childGroup = new List<ObjectType>();
-                                    }
+                                        if (NewObjectGroups.ContainsKey(potentialParent.name))
+                                        {
+                                            NewObjectGroups[potentialParent.name].Add(potentialChild);
+                                        }
+                                        else
+                                        {
+                                            childGroup.Add(potentialChild);
+                                            NewObjectGroups.Add(potentialParent.name, childGroup);
+                                            childGroup = new List<ObjectType>();
+                                        }
 
+                                    }
+                                }
+                                else
+                                {
+                                    remaining.Add(potentialChild);
                                 }
                             }
-                            else
-                            {
-                                remaining.Add(potentialChild);
-                            }
+                            objectList = remaining;
+                            remaining = new List<ObjectType>();
                         }
-                        objectList = remaining;
-                        remaining = new List<ObjectType>();
                     }
-                }
-                foreach (var item in NewObjectGroups)
-                {
-                    ObjectGroups.Add(item.Key, item.Value);
-                }
+                    foreach (var item in NewObjectGroups)
+                    {
+                        ObjectGroups.Add(item.Key, item.Value);
+                    }
 
+                }
+            }
+            catch (InsightUserAthenticationException e)
+            {
+                throw e;
+            }
+            catch (Exception e)
+            {
+                logger.Fatal("Uknown exception: \n" + e.Message);
+                throw e;
             }
         }
         /// <summary>
         ///  Gets all object types conatained in a schema
         /// </summary>
         /// <returns>array of <see cref="ObjectType"/>ObjectType/></returns>
-        public ObjectType[] GetInsightObjectTypeList(int schemaID)
+        public ObjectType[] GetInsightObjectTypeList(int schemaID, string username)
         {
             try
             {
@@ -353,11 +381,14 @@ namespace InsightClientLibrary
                 string statusCode = response.StatusCode.ToString();
                 if (statusCode.Equals("Unauthorized"))
                 {
-                    AuthenticationTest = "Unauthorized";
-                    throw new Exception("The user set for this operation in not authorized with insight");
+                    throw new InsightUserAthenticationException(username);
                 }
                 AuthenticationTest = statusCode;
                 return JsonConvert.DeserializeObject<ObjectType[]>(response.Content);
+            }
+            catch (InsightUserAthenticationException e)
+            {
+                throw e;
             }
             catch (Exception e)
             {
@@ -387,7 +418,7 @@ namespace InsightClientLibrary
                 InsightRestClient = new RestClient();
                 InsightRestClient.BaseUrl = new Uri(InsightApiServerAdress);
                 InsightRestClient.Authenticator = new HttpBasicAuthenticator(username, password);
-                InsightRestClient.Timeout = 30000;
+                InsightRestClient.Timeout = 60000;
                 InsightRestClient.AddDefaultHeader("User-Agent", "DataMiner");
                 return InsightRestClient;
             }

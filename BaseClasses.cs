@@ -236,57 +236,46 @@ namespace InsightClientLibrary
         /// <returns>modified name with no illegal characters, will be an empty string in case too many invalid characters exist</returns>
         public static string ModifyUnspportedInsightNameConvention(string name, string forbiddenInsightApiQuerySymbols)
         {
-            // A legal uuid has the convention format of Name-DEMARCATION_A-DEMARCATION_B-DEMARCATION_C
-            // where DEMARCATIONS B and C are optional
-            Regex regex = new Regex(forbiddenInsightApiQuerySymbols);
-            if (!name.Contains("-"))
+            string nameToModify = name;
+            bool hasForbidden = true;
+
+            while (hasForbidden)
+            {
+                foreach (char forbiddenSymbol in forbiddenInsightApiQuerySymbols)
+                {
+                    if (nameToModify.Contains(forbiddenSymbol.ToString()))
+                    {
+                        int forbiddenIndex = nameToModify.IndexOf(forbiddenSymbol);
+                        if (forbiddenIndex < nameToModify.Length - 1)
+                        {
+                            nameToModify = nameToModify.Substring(forbiddenIndex + 1);
+                        }
+                        else nameToModify = "";
+                    }
+                }
+                hasForbidden = false;
+                foreach (char ch in nameToModify)
+                {
+                    if (forbiddenInsightApiQuerySymbols.Contains(ch.ToString()))
+                    {
+                        hasForbidden = true;
+                    }
+                }
+            }
+            if (nameToModify.Equals(""))
             {
                 throw new IllegalNameException(name);
             }
             else
             {
-                int indexOfFirstDemarcationIndicator = name.IndexOf('-');
-                string nameToModify = name.Substring(0, indexOfFirstDemarcationIndicator);
-                bool hasForbidden = true;
-
-                while (hasForbidden)
+                if (nameToModify.Contains(" "))
                 {
-                    foreach (char forbiddenSymbol in forbiddenInsightApiQuerySymbols)
-                    {
-                        if (nameToModify.Contains(forbiddenSymbol.ToString()))
-                        {
-                            int forbiddenIndex = nameToModify.IndexOf(forbiddenSymbol);
-                            if (forbiddenIndex < nameToModify.Length - 1)
-                            {
-                                nameToModify = nameToModify.Substring(forbiddenIndex + 1);
-                            }
-                            else nameToModify = "";
-                        }
-                    }
-                    hasForbidden = false;
-                    foreach (char ch in nameToModify)
-                    {
-                        if (forbiddenInsightApiQuerySymbols.Contains(ch.ToString()))
-                        {
-                            hasForbidden = true;
-                        }
-                    }
+                    var s = '"'.ToString();
+                    nameToModify = s + nameToModify + s;
                 }
-                if (nameToModify.Equals(""))
-                {
-                    throw new IllegalNameException(name);
-                }
-                else
-                {
-                    nameToModify += name.Substring(indexOfFirstDemarcationIndicator);
-                    if (nameToModify.Contains(" "))
-                    {
-                        var s = '"'.ToString();
-                        nameToModify = s + nameToModify + s;
-                    }
-                    return nameToModify;
-                }
+                return nameToModify;
             }
+            
         }
         /// <summary>
         /// Checks if the given string is a legal IPV4 adress.
