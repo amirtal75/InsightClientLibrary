@@ -176,7 +176,7 @@ namespace InsightClientLibrary
         }
     }
     /// <summary>
-    /// Class to avoid recycle code, contains useful methods
+    /// Class to avoid recycle code, contains useful methods.
     /// </summary>
     public class Tools
     {

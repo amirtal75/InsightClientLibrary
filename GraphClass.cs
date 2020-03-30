@@ -6,7 +6,7 @@ using NLog;
 namespace InsightClientLibrary
 {
     /// <summary>
-    /// Represent a service graph for a uuid
+    /// Represents a service graph for a uuid
     /// </summary>
     public class ServiceGraph
     {

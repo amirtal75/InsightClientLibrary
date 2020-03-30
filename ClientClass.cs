@@ -15,7 +15,7 @@ namespace InsightClientLibrary
         #pragma warning restore CS1591
     {
         /// <summary>
-        /// This class contains a variety of methods meant to perform requests from and to Insight.
+        /// This class contain methods meant to perform requests from and to Insight.
         /// In case the insight version will be updated, the following must adjusted accordingly:
         ///     1. The function GetInsightObjectTypeList, uses the insight API query: https://jira.mx1.com/rest/insight/1.0/objectschema/3/objecttypes/flat
         ///     2. The function 

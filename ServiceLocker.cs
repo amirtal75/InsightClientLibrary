@@ -5,7 +5,7 @@ using NLog;
 namespace InsightClientLibrary
 {
     /// <summary>
-    /// Class with methods used to extract data for locking elements in a corresponding equipment
+    /// Class with methods used to extract data for locking elements in a relevant equipment
     /// </summary>
     public class ServiceLocker
     {
