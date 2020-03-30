@@ -85,7 +85,7 @@ namespace InsightClientLibrary
             }
             catch (Exception e)
             {
-                logger.Fatal("Crach due to unknown issue in Service locker: \n" + e.Message);
+                logger.Fatal("Crash due to unknown issue in Service locker: |" + e.Message + "|" + e.StackTrace);
                 throw e;
             }
 
@@ -105,11 +105,18 @@ namespace InsightClientLibrary
                 {
                     return null;
                 }
+                List<GraphElement> graphLockables = new List<GraphElement>();
                 list = new List<GraphElement>();
                 list.Add(source);
-                var graphLockables = lastSerachedUuidGraph.getLockableElements(list, Pop);
+                if (pop.Equals(""))
+                {
+                    graphLockables.AddRange(lastSerachedUuidGraph.getLockableElements(list, "EHA"));
+                    graphLockables.AddRange(lastSerachedUuidGraph.getLockableElements(list, "MUC"));
+                }
+                else graphLockables.AddRange(lastSerachedUuidGraph.getLockableElements(list, Pop));
+
                 List<GraphElement> nextLockables = new List<GraphElement>(graphLockables);
-                LockableElement toLock;
+                List<LockableElement> toLock;
                 while (nextLockables.Count > 0)
                 {
                     graphLockables = nextLockables;
@@ -120,7 +127,7 @@ namespace InsightClientLibrary
                         toLock = GetLockElement(destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, lastSerachedUuidGraph, source, lockable);
                         if (toLock != null)
                         {
-                            answer.Add(toLock);
+                            answer.AddRange(toLock);
                         }
                     }
                     foreach (var lockableElement in answer)
@@ -146,32 +153,32 @@ namespace InsightClientLibrary
             }
             catch (IllegalNameException e)
             {
-                logger.Error(e.Message);
+                logger.Error(e.Message + "|" + e.StackTrace);
                 throw e;
             }
             catch (InsighClientLibraryUnknownErrorException e)
             {
-                logger.Fatal(e.Message);
+                logger.Fatal(e.Message + "|" + e.StackTrace);
                 throw e;
             }
             catch (CorruptedInsightDataException e)
             {
-                logger.Error(e.Message);
+                logger.Error(e.Message + "|" + e.StackTrace);
                 throw e;
             }
             catch (RestSharpException e)
             {
-                logger.Error(e.Message);
-                throw new RestSharpException(e.Message);
+                logger.Fatal(e.Message + "|" + e.StackTrace);
+                throw new RestSharpException(e.Message + "|" + e.StackTrace);
             }
             catch (UnsuccessfullResponseException e)
             {
-                logger.Error(e.Message);
-                throw new UnsuccessfullResponseException(e.Message);
+                logger.Error(e.Message + "|" + e.StackTrace);
+                throw new UnsuccessfullResponseException(e.Message + "|" + e.StackTrace);
             }
             catch (Exception e)
             {
-                logger.Fatal("Unknwon error: \n" + e.Message);
+                logger.Fatal("Unknwon error: |" + e.Message + "|" + e.StackTrace);
                 throw e;
             }
 
@@ -200,25 +207,35 @@ namespace InsightClientLibrary
                 }
                 lastSerachedUuidGraph = graph;
                 Dictionary<GraphElement, List<LockableElement>> answer = new Dictionary<GraphElement, List<LockableElement>>();
+                List<LockableElement> tmp = null;
                 foreach (var source in graph.Sources)
                 {
-                    answer.Add(source, GetSourceLockElement(uuid, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, source));
+                    tmp = GetSourceLockElement(uuid, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, source);
+                    if (tmp.Count > 0)
+                    {
+                        answer.Add(source, tmp);
+                    }
                 }
                 return answer;
             }
             catch (IllegalNameException e)
             {
-                logger.Error(e.Message);
+                logger.Error(e.Message + "|" + e.StackTrace);
                 throw e;
             }
             catch (InsighClientLibraryUnknownErrorException e)
             {
-                logger.Fatal(e.Message);
+                logger.Fatal(e.Message + "|" + e.StackTrace);
                 throw e;
             }
             catch (CorruptedInsightDataException e)
             {
-                logger.Error(e.Message);
+                logger.Error(e.Message + "|" + e.StackTrace);
+                throw e;
+            }
+            catch(Exception e)
+            {
+                logger.Fatal(e.Message + "|" + e.StackTrace);
                 throw e;
             }
 
@@ -274,9 +291,9 @@ namespace InsightClientLibrary
         /// <param name="source"></param>
         /// <param name="elementToLock"></param>
         /// <returns></returns>
-        public LockableElement GetLockElement(string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel, ServiceGraph graph, GraphElement source, GraphElement elementToLock)
+        public List<LockableElement> GetLockElement(string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel, ServiceGraph graph, GraphElement source, GraphElement elementToLock)
         {
-            LockableElement answer = null;
+            List<LockableElement> answer = new List<LockableElement>();
 
             string serviceID = "";
             string attributeName = "";
@@ -299,7 +316,7 @@ namespace InsightClientLibrary
             string transponder = "";
             string rollOff = "";
             string FEC = "";
-
+            string ElementStatus = "";
 
             RFLockableElement rFLockable = null;
             IPLockableElement iPLockable = null;
@@ -334,6 +351,10 @@ namespace InsightClientLibrary
                 if (attribute.ObjectAttributeValues != null && attribute.ObjectAttributeValues.Count > 0)
                 {
                     attributeName = elementToLock.ObjectAttributeTypesById[attribute.objectTypeAttributeId];
+                    if (attributeName.Equals("Element Status"))
+                    {
+                        ElementStatus = attribute.ObjectAttributeValues[0].displayValue;
+                    }
                     switch (elementType.ToLower())
                     {
                         case "downlink":
@@ -621,34 +642,42 @@ namespace InsightClientLibrary
 
             if (elementType.Equals("Downlink") || elementType.Equals("Monitoring"))
             {
-                logger.Debug("Given Element: {0}, Multilockable returned.", elementType);
-                multiLockable = new MultiLockableElement(multicastEHAMain, multicastEHABackup, sourceIPMain, sourceIPBackup, downlinkFrequency, modulation, downlinkPolarity,
-                                downlinkSatellite,transponder ,FEC,rollOff,downlinkSymbolRate, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
-                answer = multiLockable;
-                logger.Debug("\nlockable element parameters:\n" + multiLockable.ToString());
-
+                if (Pop.ToLower().Equals("eha") || Pop.Equals(""))
+                {
+                    multiLockable = new MultiLockableElement(multicastEHAMain, multicastEHABackup, sourceIPMain, sourceIPBackup, downlinkFrequency, modulation, downlinkPolarity,
+                                                    downlinkSatellite, transponder, FEC, rollOff, downlinkSymbolRate, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
+                    answer.Add(multiLockable);
+                }
+                if (Pop.ToLower().Equals("muc") || Pop.Equals(""))
+                {
+                    multiLockable = new MultiLockableElement(multicastMUC, multicastMUCBackup, sourceIPMain, sourceIPBackup, downlinkFrequency, modulation, downlinkPolarity,
+                                downlinkSatellite, transponder, FEC, rollOff, downlinkSymbolRate, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
+                    answer.Add(multiLockable);
+                }
+                logger.Debug("lockable element parameters:|" + multiLockable.ToString());
             }
             else if (elementType.Equals("Uplink"))
             {
                 logger.Debug("Given Element: {0}, RFLockable returned.", elementType);
                 rFLockable = new RFLockableElement(downlinkFrequency, modulation, downlinkPolarity, downlinkSatellite, transponder,rollOff, FEC,downlinkSymbolRate, destinationIrdManagmentIp,
                                                     destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
-                answer = rFLockable;
-                logger.Debug("\nlockable element parameters:\n" + rFLockable.ToString());
+                answer.Add(rFLockable);
+                logger.Debug("lockable element parameters:|" + rFLockable.ToString());
             }
             else
             {
                 logger.Debug("Given Element: {0}, IPLockable returned.", elementType);
-                if (Pop.ToLower().Equals("eha"))
+                if (Pop.ToLower().Equals("eha") || Pop.Equals(""))
                 {
                     iPLockable = new IPLockableElement(multicastEHAMain, multicastEHABackup, sourceIPMain, sourceIPBackup, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
+                    answer.Add(iPLockable);
                 }
-                else if (Pop.ToLower().Equals("muc"))
+                if (Pop.ToLower().Equals("muc") || Pop.Equals(""))
                 {
-                    iPLockable = new IPLockableElement(multicastMUC, "", sourceIPMain, sourceIPBackup, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
+                    iPLockable = new IPLockableElement(multicastMUC, multicastMUCBackup, sourceIPMain, sourceIPBackup, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
+                    answer.Add(iPLockable);
                 }
-                answer = iPLockable;
-                logger.Debug("\nlockable element parameters:\n" + iPLockable.ToString());
+                logger.Debug("lockable element parameters:|" + iPLockable.ToString());
             }
             return answer;
         }
@@ -788,12 +817,12 @@ namespace InsightClientLibrary
 
         {
             return base.ToString() + 
-                "downlinkFrequency: " + downlinkFrequency + "\n" +
-                "downlinkLocalOsscilator: " + downlinkLocalOsscilator + "\n" +
-                "modulation: " + modulation + "\n" +
-                "downlinkPolarity: " + downlinkPolarity + "\n" +
-                "downlinkSatellite: " + downlinkSatellite + "\n" +
-                "downlinkSymbolRate: " + downlinkSymbolRate + "\n";
+                "downlinkFrequency: " + downlinkFrequency + "|" +
+                "downlinkLocalOsscilator: " + downlinkLocalOsscilator + "|" +
+                "modulation: " + modulation + "|" +
+                "downlinkPolarity: " + downlinkPolarity + "|" +
+                "downlinkSatellite: " + downlinkSatellite + "|" +
+                "downlinkSymbolRate: " + downlinkSymbolRate + "|";
         }
     }
 
@@ -851,10 +880,10 @@ namespace InsightClientLibrary
 
         {
             return base.ToString() +
-                "multicastMain: " + multicastMain + "\n" +
-                "multicastBackup: " + multicastBackup + "\n" +
-                "sourceIpMain: " + sourceIpMain + "\n" +
-                "sourceIpBU: " + sourceIpBU + "\n";
+                "multicastMain: " + multicastMain + "|" +
+                "multicastBackup: " + multicastBackup + "|" +
+                "sourceIpMain: " + sourceIpMain + "|" +
+                "sourceIpBU: " + sourceIpBU + "|";
         }
     }
     /// <summary>
@@ -917,10 +946,10 @@ namespace InsightClientLibrary
 
         {
             return base.ToString() +
-                "multicastMain: " + multicastMain + "\n" +
-                "multicastBackup: " + multicastBackup + "\n" +
-                "sourceIpMain: " + sourceIpMain + "\n" +
-                "sourceIpBU: " + sourceIpBU + "\n";
+                "multicastMain: " + multicastMain + "|" +
+                "multicastBackup: " + multicastBackup + "|" +
+                "sourceIpMain: " + sourceIpMain + "|" +
+                "sourceIpBU: " + sourceIpBU + "|";
         }
     }
     /// <summary>
@@ -1010,14 +1039,14 @@ namespace InsightClientLibrary
         /// <returns></returns>
         public override string ToString()
         {
-            return "Element Name: " + elementName + "\n" +
-                "Element Type: " + elementType + "\n" +
-                "Source Element Name: " + sourceElement.CurrentElement.name + "\n" +
-                "Source Element Type: " + sourceElement.CurrentElement.objectType.name + "\n" +
-                "POP: " + pop + "\n" +
-                "Receiver Name: " + destinationIrdName + "\n" +
-                "Receiver Model: " + destinationIrdModel + "\n" +
-                "Receiver Managment IP: " + destinationIrdManagmentIp + "\n";
+            return "Element Name: " + elementName + "|" +
+                "Element Type: " + elementType + "|" +
+                "Source Element Name: " + sourceElement.CurrentElement.name + "|" +
+                "Source Element Type: " + sourceElement.CurrentElement.objectType.name + "|" +
+                "POP: " + pop + "|" +
+                "Receiver Name: " + destinationIrdName + "|" +
+                "Receiver Model: " + destinationIrdModel + "|" +
+                "Receiver Managment IP: " + destinationIrdManagmentIp + "|";
         }
     }
 }

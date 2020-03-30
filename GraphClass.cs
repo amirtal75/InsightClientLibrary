@@ -40,6 +40,8 @@ namespace InsightClientLibrary
         /// <value>bool value indicating a partially succesfull graph build with an invalid member</value>
         public bool ElementMemberIsNull = false;
         private bool debug = false;
+        /// <value>bool value indicating whether the uuid was modified due to illegal naming convention</value>
+        public bool modifiedUUID { get; set; }
 
         /// <summary>
         /// Constructs a graph containing raw and parsed information of the insight API result
@@ -48,10 +50,12 @@ namespace InsightClientLibrary
         /// <param name="service">the service get API result</param>
         /// <param name="_debug"> indicated whether the program should run in debug mode</param>
         /// <param name="uuid"> the name of the service to build a graph for</param>
-        public ServiceGraph(IqlApiResult root, IqlApiResult service, bool _debug, string uuid)
+        /// <param name="modifiedUUID"> indicates whether the uuid was modified due to illegal naming convention</param>
+        public ServiceGraph(IqlApiResult root, IqlApiResult service, bool _debug, string uuid, bool modifiedUUID)
         {
             debug = _debug;
             logger = NLog.LogManager.GetCurrentClassLogger();
+            this.modifiedUUID = modifiedUUID;
             this.Service = new Service(service, logger,uuid);
             if (root == null || service.objectEntries == null || service.objectTypeAttributes == null)
             {
@@ -80,7 +84,7 @@ namespace InsightClientLibrary
             }
             catch (Exception e)
             {
-                logger.Error("initialization failed " + Service.Name + "\n" + e.Message);
+                logger.Error("initialization failed " + Service.Name + "\n" + e.Message + "|" + e.StackTrace);
                 initSuccess = false;
             }
             try
@@ -91,7 +95,7 @@ namespace InsightClientLibrary
             }
             catch (Exception e)
             {
-                logger.Error("Setting Incoming elements failed " + Service.Name + "\n" + e.Message);
+                logger.Error("Setting Incoming elements failed " + Service.Name + "\n" + e.Message + "|" + e.StackTrace);
                 incominElementSuccess = false;
             }
             try
@@ -102,7 +106,7 @@ namespace InsightClientLibrary
             }
             catch (Exception e)
             {
-                logger.Error("Setting sources failed" + "\n" + e.Message);
+                logger.Error("Setting sources failed" + "\n" + e.Message + "|" + e.StackTrace);
                 soureSetSuccess = false;
             }
             try
@@ -113,7 +117,7 @@ namespace InsightClientLibrary
             }
             catch (Exception e)
             {
-                logger.Error("graph build failed" + "\n" + e.Message);
+                logger.Error("graph build failed" + "\n" + e.Message + "|" + e.StackTrace);
                 buildGraphSuccess = false;
             }
 

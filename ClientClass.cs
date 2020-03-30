@@ -109,23 +109,23 @@ namespace InsightClientLibrary
                 }
                 catch (InsightUserAthenticationException e)
                 {
-                    logger.Error(e.Message);
+                    logger.Error(e.Message + "|" + e.StackTrace);
                     throw e;
                 }
                 catch (RestSharpException e)
                 {
-                    logger.Error(e.Message);
-                    throw new RestSharpException(e.Message);
+                    logger.Fatal(e.Message + "|" + e.StackTrace);
+                    throw new RestSharpException(e.Message + "|" + e.StackTrace);
                 }
                 catch (UnsuccessfullResponseException e)
                 {
-                    logger.Error(e.Message);
-                    throw new UnsuccessfullResponseException(e.Message);
+                    logger.Error(e.Message + "|" + e.StackTrace);
+                    throw new UnsuccessfullResponseException(e.Message + "|" + e.StackTrace);
                 }
                 catch (Exception e)
                 {
                     logger.Fatal("Client failed Insight validity test, due to a unknown issue");
-                    throw new Exception(e.Message);
+                    throw new Exception(e.Message + "|" + e.StackTrace);
                 }
             }
             else
@@ -153,8 +153,17 @@ namespace InsightClientLibrary
             {
                 insightIncomingElementNames = new List<string>();
                 graphElementIncomingElementNames = new List<string>();
+                bool modified = false;
                 var modifiedElementName = Tools.ModifyUnspportedInsightNameConvention(graphElement.CurrentElement.name, forbiddenInsightApiQuerySymbols);
-                var InsightIncomingElements = GetInsightinBoundByObjectName(modifiedElementName, "Element");
+                string equalizer = "=";
+                if (graph.modifiedUUID)
+                {
+                    equalizer = "LIKE";
+                }
+                string[] getGroups = new string[2] { "", "" };
+                string groups = InsightGetByIqlObjectIdGroup(getGroups, "Element","", modified);
+                string query = "object HAVING outboundReferences(Name " + equalizer + " " + graph.Service.Name + ") AND " + groups + "object HAVING inboundReferences(Name = " + modifiedElementName + ")";
+                var InsightIncomingElements = InsightGetByGeneralIqlQuery(query);
                 var GraphRouteIncomingElements = graphElement.IncomingElements;
                 if (!Tools.IsValidIqlResult(InsightIncomingElements))
                 {
@@ -163,14 +172,8 @@ namespace InsightClientLibrary
                 }
                 else if (InsightIncomingElements.objectEntries.Count != GraphRouteIncomingElements.Count)
                 {
-                    foreach (var element in InsightIncomingElements.objectEntries)
-                    {
-                        if (element.name.Contains(graph.Service.UUID))
-                        {
-                            logger.Fatal("The graph element: {0} has {1] incoming elements, while the insight has {2} incoming elements", graphElement.CurrentElement.name, InsightIncomingElements.objectEntries.Count, GraphRouteIncomingElements.Count);
-                            return false;
-                        }
-                    }
+                    logger.Fatal("The graph element: " + graphElement.CurrentElement.name + " has " + InsightIncomingElements.objectEntries.Count + " incoming elements, while the insight has "+ GraphRouteIncomingElements.Count + " incoming elements");
+                    return false;
                 }
                 else
                 {
@@ -206,9 +209,11 @@ namespace InsightClientLibrary
             }
             return ans;
         }
-        #pragma warning disable CS1591
+        /// <summary>
+        /// return the object schema divided into type groups
+        /// </summary>
+        /// <returns></returns>
         public Dictionary<string, List<ObjectType>> GetObjectGroups()
-        #pragma warning restore CS1591
         {
             return ObjectGroups;
         }
@@ -223,27 +228,33 @@ namespace InsightClientLibrary
             string originalUUID = uuid;
             try
             {
+                bool modified = false; ;
                 // check if the uuid contains illegal characters and remove them
                 uuid = Tools.ModifyUnspportedInsightNameConvention(uuid, forbiddenInsightApiQuerySymbols);
+                if (uuid[0] == '"')
+                {
+                    string tmp = uuid.Substring(1, uuid.Length - 2);
+                    modified = !tmp.Equals(originalUUID);
+                }
                 logger.Debug("The original uuid provided for this build: {0}", originalUUID);
                 logger.Debug("The modified uuid created for this build: {0}", uuid);
 
                 // Check if the IQL result are legal
-                IqlApiResult serviceResult = GetInsightObjectByName(uuid, "Root", "Service");
-                IqlApiResult elementResult = GetInsightOutBoundByObjectName(uuid, "Element");
+                IqlApiResult serviceResult = GetInsightObjectByName(uuid, "Root", "Service", modified);
+                IqlApiResult elementResult = GetInsightOutBoundByObjectName(uuid, "Element", modified);
                 if (!Tools.IsValidIqlResult(serviceResult) || !Tools.IsValidIqlResult(elementResult))
                 {
                     throw new CorruptedInsightDataException(uuid);
                 }
                 // if there is more than one service or none that are matching the given uuid, 
                 // it must mean that the uuid contains an illegal naming conevtion, which gave false positive results after the name modification
-                if (serviceResult.objectEntries.Count != 1)
+                if (serviceResult.objectEntries.Count > 1)
                 {
-                    throw new IllegalNameException(uuid);
+                    throw new IllegalNameException(uuid + " Uniquness lost!!");
                 }
 
                 // From here the code logic starts
-                ServiceGraph graph = new ServiceGraph(elementResult, serviceResult, debug, uuid);
+                ServiceGraph graph = new ServiceGraph(elementResult, serviceResult, debug, uuid, modified);
                 if (graph != null && graph.constructorSuceeded)
                 {
                     return graph;
@@ -256,22 +267,22 @@ namespace InsightClientLibrary
             }
             catch (IllegalNameException e)
             {
-                logger.Error(e.Message);
+                logger.Error(e.Message + "|" + e.StackTrace);
                 throw e;
             }
             catch (InsighClientLibraryUnknownErrorException e)
             {
-                logger.Fatal(e.Message);
+                logger.Fatal(e.Message + "|" + e.StackTrace);
                 throw e;
             }
             catch (CorruptedInsightDataException e)
             {
-                logger.Error(e.Message);
+                logger.Error(e.Message + "|" + e.StackTrace);
                 throw e;
             }
             catch (Exception e)
             {
-                logger.Fatal("Unknwon error: \n" + e.Message);
+                logger.Fatal("Unknwon error: \n" + e.Message + "|" + e.StackTrace);
                 throw e;
             }
         }
@@ -363,7 +374,7 @@ namespace InsightClientLibrary
             }
             catch (Exception e)
             {
-                logger.Fatal("Uknown exception: \n" + e.Message);
+                logger.Fatal("Uknown exception: \n" + e.Message + "|" + e.StackTrace);
                 throw e;
             }
         }
@@ -392,7 +403,7 @@ namespace InsightClientLibrary
             }
             catch (Exception e)
             {
-                logger.Fatal("Fatal error while communicating with Insight API:\n" + e.Message);
+                logger.Fatal("Fatal error while communicating with Insight API:\n" + e.Message + "|" + e.StackTrace);
                 return null;
             }
             
@@ -424,7 +435,7 @@ namespace InsightClientLibrary
             }
             catch (Exception e)
             {
-                logger.Error("Error with creating the web client\n" + e.Message);
+                logger.Error("Error with creating the web client\n" + e.Message + "|" + e.StackTrace);
                 throw new Exception();
             }
         }
@@ -433,11 +444,13 @@ namespace InsightClientLibrary
         /// </summary>
         /// <param name="name">Object name</param>
         /// <param name="group">Object type group that the object belons to in insight</param>
+        /// <param name="nameWasModified"> Indicates whether the object name was modified due to illegal Insight naming convetion</param>
         /// <returns>Insight object containing the data from Insight</returns>
-        public IqlApiResult GetInsightObjectByName(string name, string group)
+        public IqlApiResult GetInsightObjectByName(string name, string group, bool nameWasModified)
         {
-            string insightElementQuery = "(Name LIKE " + name + ")";
-            return InsightGetByIqlObjectIdGroup(insightElementQuery, group, "");
+            string[] insightElementQuery = new string[2] { "Name = " + name + ")", "Name LIKE " + name + ")" };
+            string queryWithGroups = InsightGetByIqlObjectIdGroup(insightElementQuery, group, "", nameWasModified);
+            return InsightGetByGeneralIqlQuery(queryWithGroups);
         }
         /// <summary>
         /// Initiates an API call to insight to receive a response for an object matching the given name.
@@ -445,22 +458,26 @@ namespace InsightClientLibrary
         /// <param name="name">Object name</param>
         /// <param name="group">Object type group that the object belongs to in insight database</param>
         /// <param name="groupMemeber">name of the member in the insight type groug that the name belongs to</param>
+        /// <param name="nameWasModified"> Indicates whether the object name was modified due to illegal Insight naming convetion</param>
         /// <returns>Insight object containing the data from Insight</returns>
-        public IqlApiResult GetInsightObjectByName(string name, string group, string groupMemeber)
+        public IqlApiResult GetInsightObjectByName(string name, string group, string groupMemeber, bool nameWasModified)
         {
-            string insightElementQuery = "(Name LIKE " + name + ")";
-            return InsightGetByIqlObjectIdGroup(insightElementQuery, group, groupMemeber);
+            string[] insightElementQuery = new string[2] { "(Name = " + name + ")", "(Name LIKE " + name + ")" };
+            string queryWithGroups = InsightGetByIqlObjectIdGroup(insightElementQuery, group, groupMemeber, nameWasModified);
+            return InsightGetByGeneralIqlQuery(queryWithGroups);
         }
         /// <summary>
         /// Initiates an API call to insight to receive a response for objects reffering to the given name.
         /// </summary>
         /// <param name="name">Object name</param>
         /// <param name="groupName">Object type group that the object belongs to in insight database</param>
+        /// <param name="nameWasModified"> Indicates whether the object name was modified due to illegal Insight naming convetion</param>
         /// <returns>Insight object containing the data from Insight</returns>
-        public IqlApiResult GetInsightOutBoundByObjectName(string name, string groupName)
+        public IqlApiResult GetInsightOutBoundByObjectName(string name, string groupName, bool nameWasModified)
         {
-            string insightElementQuery = "object HAVING outboundReferences(Name LIKE " + name + ")";
-            return InsightGetByIqlObjectIdGroup(insightElementQuery, groupName, "");
+            string[] insightElementQuery = new string[2] { "object HAVING outboundReferences(Name = " + name + ")", "object HAVING outboundReferences(Name LIKE " + name + ")" };
+            string queryWithGroups = InsightGetByIqlObjectIdGroup(insightElementQuery, groupName, "", nameWasModified);
+            return InsightGetByGeneralIqlQuery(queryWithGroups);
         }
         /// <summary>
         /// Initiates an API call to insight to receive a response for objects reffering to the given name.
@@ -468,22 +485,27 @@ namespace InsightClientLibrary
         /// <param name="name">Object name</param>
         /// <param name="groupName">Object type group that the object belongs to in insight database</param>
         /// <param name="groupMemeber">name of the member in the insight type groug that the name belongs to</param>
+        /// <param name="nameWasModified"> Indicates whether the object name was modified due to illegal Insight naming convetion</param>
         /// <returns>Insight object containing the data from Insight</returns>
-        public IqlApiResult GetInsightOutBoundByObjectName(string name, string groupName, string groupMemeber)
+        public IqlApiResult GetInsightOutBoundByObjectName(string name, string groupName, string groupMemeber, bool nameWasModified)
         {
-            string insightElementQuery = "object HAVING outboundReferences(Name LIKE " + name + ")";
-            return InsightGetByIqlObjectIdGroup(insightElementQuery, groupName, groupMemeber);
+            string[] insightElementQuery = new string[2] { "object HAVING outboundReferences(Name = " + name + ")", "object HAVING outboundReferences(Name LIKE " + name + ")" };
+            string queryWithGroups = InsightGetByIqlObjectIdGroup(insightElementQuery, groupName, groupMemeber, nameWasModified);
+            return InsightGetByGeneralIqlQuery(queryWithGroups);
         }
         /// <summary>
         /// Initiates an API call to insight to receive a response for objects refferd by the given name.
         /// </summary>
         /// <param name="name">Object name</param>
         /// <param name="groupName">Object type group that the object belongs to in insight database</param>
+        /// <param name="nameWasModified"> Indicates whether the object name was modified due to illegal Insight naming convetion</param>
         /// <returns>Insight object containing the data from Insight</returns>
-        public IqlApiResult GetInsightinBoundByObjectName(string name, string groupName)
+        public IqlApiResult GetInsightinBoundByObjectName(string name, string groupName, bool nameWasModified)
         {
-            string insightElementQuery = "object HAVING inboundReferences(Name LIKE " + name + ")";
-            return InsightGetByIqlObjectIdGroup(insightElementQuery, groupName, "");
+            string[] insightElementQuery = new string[2] { "object HAVING inboundReferences(Name = " + name + ")", "object HAVING inboundReferences(Name LIKE " + name + ")" };
+
+            string queryWithGroups = InsightGetByIqlObjectIdGroup(insightElementQuery, groupName, "", nameWasModified);
+            return InsightGetByGeneralIqlQuery(queryWithGroups);
         }
         /// <summary>
         /// Initiates an API call to insight to receive a response for objects refferd by the given name.
@@ -491,17 +513,19 @@ namespace InsightClientLibrary
         /// <param name="name">Object name</param>
         /// <param name="groupName">Object type group that the object belongs to in insight database</param>
         /// <param name="groupMemeber">name of the member in the insight type groug that the name belongs to</param>
+        /// <param name="nameWasModified"> Indicates whether the object name was modified due to illegal Insight naming convetion</param>
         /// <returns>Insight object containing the data from Insight</returns>
-        public IqlApiResult GetInsightinBoundByObjectName(string name, string groupName, string groupMemeber)
+        public IqlApiResult GetInsightinBoundByObjectName(string name, string groupName, string groupMemeber, bool nameWasModified)
         {
-            string insightElementQuery = "object HAVING inboundReferences(Name LIKE " + name + ")";
-            return InsightGetByIqlObjectIdGroup(insightElementQuery, groupName, groupMemeber);
+            string[] insightElementQuery = new string[2] { "object HAVING inboundReferences(Name = " + name + ")" , "object HAVING inboundReferences(Name LIKE " + name + ")" };
+            string queryWithGroups = InsightGetByIqlObjectIdGroup(insightElementQuery, groupName, groupMemeber, nameWasModified);
+            return InsightGetByGeneralIqlQuery(queryWithGroups);
         }
         /// <summary>
         /// Using the group details received, deduces the id group the insight request will use to receive a response for the request
         /// </summary>
         /// <returns>Insight object containing the data from Insight</returns>
-        private IqlApiResult InsightGetByIqlObjectIdGroup(string iqlQuery, string groupName, string groupMemeber)
+        private string InsightGetByIqlObjectIdGroup(string[] iqlQuery, string groupName, string groupMemeber, bool nameWasModified)
         {
             var list = ObjectGroups[groupName];
             string objectIdGroup = "(";
@@ -521,8 +545,13 @@ namespace InsightClientLibrary
                 objectIdGroup = objectIdGroup.Substring(0, objectIdGroup.Length - 1);
             }
             objectIdGroup += ")";
-            string insightQuery = "objectTypeId IN " + objectIdGroup + " AND " + iqlQuery;
-            return InsightGetByGeneralIqlQuery(insightQuery);
+            string insightQueryEqual = "objectTypeId IN " + objectIdGroup + " AND " + iqlQuery[0];
+            string insightQueryLike = "objectTypeId IN " + objectIdGroup + " AND " + iqlQuery[1];
+            if (nameWasModified)
+            {
+                return insightQueryLike;
+            }
+            else return insightQueryEqual;
         }
         /// <summary>
         /// An advanced user can directly enter an IQL Insight valid query and receive a valid response
@@ -570,7 +599,7 @@ namespace InsightClientLibrary
             catch (Exception e)
             {
                 logger.Error("Client failed to execute the insight request due to unknown exception");
-                logger.Error(e.Message);
+                logger.Error(e.Message + "|" + e.StackTrace);
                 return null;
             }
         }

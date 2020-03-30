@@ -806,6 +806,12 @@
             <param name="graph">the graph to check for a valid route</param>
             <returns>true if the graph route is valid, false otherwise</returns>
         </member>
+        <member name="M:InsightClientLibrary.InsightClient.GetObjectGroups">
+            <summary>
+            return the object schema divided into type groups
+            </summary>
+            <returns></returns>
+        </member>
         <member name="M:InsightClientLibrary.InsightClient.GetServiceGraph(System.String)">
             <summary>
             The insight client will search for the elemets related to the uuid.
@@ -838,58 +844,64 @@
             <param name="password"> Insight valid password</param>
             <returns> A new rest client initialized using the given parameters</returns>
         </member>
-        <member name="M:InsightClientLibrary.InsightClient.GetInsightObjectByName(System.String,System.String)">
+        <member name="M:InsightClientLibrary.InsightClient.GetInsightObjectByName(System.String,System.String,System.Boolean)">
             <summary>
             Initiates an API call to insight to receive a response for an object matching the given name.
             </summary>
             <param name="name">Object name</param>
             <param name="group">Object type group that the object belons to in insight</param>
+            <param name="nameWasModified"> Indicates whether the object name was modified due to illegal Insight naming convetion</param>
             <returns>Insight object containing the data from Insight</returns>
         </member>
-        <member name="M:InsightClientLibrary.InsightClient.GetInsightObjectByName(System.String,System.String,System.String)">
+        <member name="M:InsightClientLibrary.InsightClient.GetInsightObjectByName(System.String,System.String,System.String,System.Boolean)">
             <summary>
             Initiates an API call to insight to receive a response for an object matching the given name.
             </summary>
             <param name="name">Object name</param>
             <param name="group">Object type group that the object belongs to in insight database</param>
             <param name="groupMemeber">name of the member in the insight type groug that the name belongs to</param>
+            <param name="nameWasModified"> Indicates whether the object name was modified due to illegal Insight naming convetion</param>
             <returns>Insight object containing the data from Insight</returns>
         </member>
-        <member name="M:InsightClientLibrary.InsightClient.GetInsightOutBoundByObjectName(System.String,System.String)">
+        <member name="M:InsightClientLibrary.InsightClient.GetInsightOutBoundByObjectName(System.String,System.String,System.Boolean)">
             <summary>
             Initiates an API call to insight to receive a response for objects reffering to the given name.
             </summary>
             <param name="name">Object name</param>
             <param name="groupName">Object type group that the object belongs to in insight database</param>
+            <param name="nameWasModified"> Indicates whether the object name was modified due to illegal Insight naming convetion</param>
             <returns>Insight object containing the data from Insight</returns>
         </member>
-        <member name="M:InsightClientLibrary.InsightClient.GetInsightOutBoundByObjectName(System.String,System.String,System.String)">
+        <member name="M:InsightClientLibrary.InsightClient.GetInsightOutBoundByObjectName(System.String,System.String,System.String,System.Boolean)">
             <summary>
             Initiates an API call to insight to receive a response for objects reffering to the given name.
             </summary>
             <param name="name">Object name</param>
             <param name="groupName">Object type group that the object belongs to in insight database</param>
             <param name="groupMemeber">name of the member in the insight type groug that the name belongs to</param>
+            <param name="nameWasModified"> Indicates whether the object name was modified due to illegal Insight naming convetion</param>
             <returns>Insight object containing the data from Insight</returns>
         </member>
-        <member name="M:InsightClientLibrary.InsightClient.GetInsightinBoundByObjectName(System.String,System.String)">
+        <member name="M:InsightClientLibrary.InsightClient.GetInsightinBoundByObjectName(System.String,System.String,System.Boolean)">
             <summary>
             Initiates an API call to insight to receive a response for objects refferd by the given name.
             </summary>
             <param name="name">Object name</param>
             <param name="groupName">Object type group that the object belongs to in insight database</param>
+            <param name="nameWasModified"> Indicates whether the object name was modified due to illegal Insight naming convetion</param>
             <returns>Insight object containing the data from Insight</returns>
         </member>
-        <member name="M:InsightClientLibrary.InsightClient.GetInsightinBoundByObjectName(System.String,System.String,System.String)">
+        <member name="M:InsightClientLibrary.InsightClient.GetInsightinBoundByObjectName(System.String,System.String,System.String,System.Boolean)">
             <summary>
             Initiates an API call to insight to receive a response for objects refferd by the given name.
             </summary>
             <param name="name">Object name</param>
             <param name="groupName">Object type group that the object belongs to in insight database</param>
             <param name="groupMemeber">name of the member in the insight type groug that the name belongs to</param>
+            <param name="nameWasModified"> Indicates whether the object name was modified due to illegal Insight naming convetion</param>
             <returns>Insight object containing the data from Insight</returns>
         </member>
-        <member name="M:InsightClientLibrary.InsightClient.InsightGetByIqlObjectIdGroup(System.String,System.String,System.String)">
+        <member name="M:InsightClientLibrary.InsightClient.InsightGetByIqlObjectIdGroup(System.String[],System.String,System.String,System.Boolean)">
             <summary>
             Using the group details received, deduces the id group the insight request will use to receive a response for the request
             </summary>
@@ -957,7 +969,10 @@
         <member name="F:InsightClientLibrary.ServiceGraph.ElementMemberIsNull">
             <value>bool value indicating a partially succesfull graph build with an invalid member</value>
         </member>
-        <member name="M:InsightClientLibrary.ServiceGraph.#ctor(InsightClientLibrary.IqlApiResult,InsightClientLibrary.IqlApiResult,System.Boolean,System.String)">
+        <member name="P:InsightClientLibrary.ServiceGraph.modifiedUUID">
+            <value>bool value indicating whether the uuid was modified due to illegal naming convention</value>
+        </member>
+        <member name="M:InsightClientLibrary.ServiceGraph.#ctor(InsightClientLibrary.IqlApiResult,InsightClientLibrary.IqlApiResult,System.Boolean,System.String,System.Boolean)">
             <summary>
             Constructs a graph containing raw and parsed information of the insight API result
             </summary>
@@ -965,6 +980,7 @@
             <param name="service">the service get API result</param>
             <param name="_debug"> indicated whether the program should run in debug mode</param>
             <param name="uuid"> the name of the service to build a graph for</param>
+            <param name="modifiedUUID"> indicates whether the uuid was modified due to illegal naming convention</param>
         </member>
         <member name="M:InsightClientLibrary.ServiceGraph.PrintGraph">
             <summary>
