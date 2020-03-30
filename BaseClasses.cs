@@ -89,9 +89,9 @@ namespace InsightClientLibrary
                     foreach (var entry in service.objectEntries)
                     {
                         string name = entry.label;
-                        if (name.Length - originalUUID.Length >=0 && name.Length - originalUUID.Length <= 0)
+                        if (name.Length - originalUUID.Length >= 0 && name.Length - originalUUID.Length <= 0)
                         {
-                            selectedEntry = entry; 
+                            selectedEntry = entry;
                         }
                     }
                 }
@@ -176,7 +176,7 @@ namespace InsightClientLibrary
         }
     }
     /// <summary>
-    /// Class to avoid recycle code, contains useful methods.
+    /// Class to avoid recycle code, contains useful methods
     /// </summary>
     public class Tools
     {
@@ -236,57 +236,46 @@ namespace InsightClientLibrary
         /// <returns>modified name with no illegal characters, will be an empty string in case too many invalid characters exist</returns>
         public static string ModifyUnspportedInsightNameConvention(string name, string forbiddenInsightApiQuerySymbols)
         {
-            // A legal uuid has the convention format of Name-DEMARCATION_A-DEMARCATION_B-DEMARCATION_C
-            // where DEMARCATIONS B and C are optional
-            Regex regex = new Regex(forbiddenInsightApiQuerySymbols);
-            if (!name.Contains("-"))
+            string nameToModify = name;
+            bool hasForbidden = true;
+
+            while (hasForbidden)
+            {
+                foreach (char forbiddenSymbol in forbiddenInsightApiQuerySymbols)
+                {
+                    if (nameToModify.Contains(forbiddenSymbol.ToString()))
+                    {
+                        int forbiddenIndex = nameToModify.IndexOf(forbiddenSymbol);
+                        if (forbiddenIndex < nameToModify.Length - 1)
+                        {
+                            nameToModify = nameToModify.Substring(forbiddenIndex + 1);
+                        }
+                        else nameToModify = "";
+                    }
+                }
+                hasForbidden = false;
+                foreach (char ch in nameToModify)
+                {
+                    if (forbiddenInsightApiQuerySymbols.Contains(ch.ToString()))
+                    {
+                        hasForbidden = true;
+                    }
+                }
+            }
+            if (nameToModify.Equals(""))
             {
                 throw new IllegalNameException(name);
             }
             else
             {
-                int indexOfFirstDemarcationIndicator = name.IndexOf('-');
-                string nameToModify = name.Substring(0, indexOfFirstDemarcationIndicator);
-                bool hasForbidden = true;
-
-                while (hasForbidden)
+                if (nameToModify.Contains(" "))
                 {
-                    foreach (char forbiddenSymbol in forbiddenInsightApiQuerySymbols)
-                    {
-                        if (nameToModify.Contains(forbiddenSymbol.ToString()))
-                        {
-                            int forbiddenIndex = nameToModify.IndexOf(forbiddenSymbol);
-                            if (forbiddenIndex < nameToModify.Length - 1)
-                            {
-                                nameToModify = nameToModify.Substring(forbiddenIndex + 1);
-                            }
-                            else nameToModify = "";
-                        }
-                    }
-                    hasForbidden = false;
-                    foreach (char ch in nameToModify)
-                    {
-                        if (forbiddenInsightApiQuerySymbols.Contains(ch.ToString()))
-                        {
-                            hasForbidden = true;
-                        }
-                    }
+                    var s = '"'.ToString();
+                    nameToModify = s + nameToModify + s;
                 }
-                if (nameToModify.Equals(""))
-                {
-                    throw new IllegalNameException(name);
-                }
-                else
-                {
-                    nameToModify += name.Substring(indexOfFirstDemarcationIndicator);
-                    if (nameToModify.Contains(" "))
-                    {
-                        var s = '"'.ToString();
-                        nameToModify = s + nameToModify + s;
-                    }
-                    return nameToModify;
-                }
+                return nameToModify;
             }
+
         }
         /// <summary>
         /// Checks if the given string is a legal IPV4 adress.
@@ -418,7 +407,7 @@ namespace InsightClientLibrary
             }
         }
     }
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class ApplicationEntry
 
     {
@@ -435,7 +424,7 @@ namespace InsightClientLibrary
         public string additionalValue { get; set; }
 
     }
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class ConfluenceSpace
 
     {
@@ -452,7 +441,7 @@ namespace InsightClientLibrary
         public string additionalValue { get; set; }
 
     }
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class ObjectTypeAttribute
 
     {
@@ -563,7 +552,7 @@ namespace InsightClientLibrary
 
 
     }
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class ObjectType
 
     {
@@ -611,7 +600,7 @@ namespace InsightClientLibrary
 
 
     }
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class Icon
 
     {
@@ -628,7 +617,7 @@ namespace InsightClientLibrary
         public string url48 { get; set; }
 
     }
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class _Links
 
     {
@@ -636,7 +625,7 @@ namespace InsightClientLibrary
         public string self { get; set; }
 
     }
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class ObjectEntry
 
     {
@@ -718,7 +707,7 @@ namespace InsightClientLibrary
             return objectKey + ": " + name;
         }
     }
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class ObjectJiraIssue
 
     {
@@ -735,7 +724,7 @@ namespace InsightClientLibrary
         public int objectId { get; set; }
 
     }
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class Comment
 
     {
@@ -761,7 +750,7 @@ namespace InsightClientLibrary
         public int objectId { get; set; }
 
     }
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class ObjectWatch
 
     {
@@ -775,7 +764,7 @@ namespace InsightClientLibrary
         public int objectId { get; set; }
 
     }
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class ObjectAttachment
 
     {
@@ -807,7 +796,7 @@ namespace InsightClientLibrary
         public int objectId { get; set; }
 
     }
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class ObjectHistory
 
     {
@@ -845,7 +834,7 @@ namespace InsightClientLibrary
         public int type { get; set; }
 
     }
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class Avatar
 
     {
@@ -868,7 +857,7 @@ namespace InsightClientLibrary
         public int objectId { get; set; }
 
     }
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class DefaultType
 
     {
@@ -879,7 +868,7 @@ namespace InsightClientLibrary
         public string typeName { get; set; }
 
     }
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class ObjectAttribute
 
     {
@@ -900,7 +889,7 @@ namespace InsightClientLibrary
 
     }
 
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class ObjectAttributeValue
 
     {
@@ -927,7 +916,7 @@ namespace InsightClientLibrary
 
 
     }
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class ReferenceType
 
     {
@@ -950,7 +939,7 @@ namespace InsightClientLibrary
         public int objectSchemaId { get; set; }
 
     }
-        /// <summary> </summary>
+    /// <summary> </summary>
     public class IqlApiResult
 
     {

@@ -77,7 +77,7 @@
         </member>
         <member name="T:InsightClientLibrary.Tools">
             <summary>
-            Class to avoid recycle code, contains useful methods.
+            Class to avoid recycle code, contains useful methods
             </summary>
         </member>
         <member name="M:InsightClientLibrary.Tools.ReadNameFromExcelFile(System.String,System.Int32,System.Int32)">
