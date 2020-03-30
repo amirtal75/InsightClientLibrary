@@ -6,7 +6,7 @@ using NLog;
 namespace InsightClientLibrary
 {
     /// <summary>
-    /// Represents a service graph for a uuid
+    /// Represent a service graph for a uuid
     /// </summary>
     public class ServiceGraph
     {
@@ -40,6 +40,8 @@ namespace InsightClientLibrary
         /// <value>bool value indicating a partially succesfull graph build with an invalid member</value>
         public bool ElementMemberIsNull = false;
         private bool debug = false;
+        /// <value>bool value indicating whether the uuid was modified due to illegal naming convention</value>
+        public bool modifiedUUID { get; set; }
 
         /// <summary>
         /// Constructs a graph containing raw and parsed information of the insight API result
@@ -48,11 +50,13 @@ namespace InsightClientLibrary
         /// <param name="service">the service get API result</param>
         /// <param name="_debug"> indicated whether the program should run in debug mode</param>
         /// <param name="uuid"> the name of the service to build a graph for</param>
-        public ServiceGraph(IqlApiResult root, IqlApiResult service, bool _debug, string uuid)
+        /// <param name="modifiedUUID"> indicates whether the uuid was modified due to illegal naming convention</param>
+        public ServiceGraph(IqlApiResult root, IqlApiResult service, bool _debug, string uuid, bool modifiedUUID)
         {
             debug = _debug;
             logger = NLog.LogManager.GetCurrentClassLogger();
-            this.Service = new Service(service, logger,uuid);
+            this.modifiedUUID = modifiedUUID;
+            this.Service = new Service(service, logger, uuid);
             if (root == null || service.objectEntries == null || service.objectTypeAttributes == null)
             {
                 return;
@@ -80,7 +84,7 @@ namespace InsightClientLibrary
             }
             catch (Exception e)
             {
-                logger.Error("initialization failed " + Service.Name + "\n" + e.Message);
+                logger.Error("initialization failed " + Service.Name + "\n" + e.Message + "|" + e.StackTrace);
                 initSuccess = false;
             }
             try
@@ -91,7 +95,7 @@ namespace InsightClientLibrary
             }
             catch (Exception e)
             {
-                logger.Error("Setting Incoming elements failed " + Service.Name + "\n" + e.Message);
+                logger.Error("Setting Incoming elements failed " + Service.Name + "\n" + e.Message + "|" + e.StackTrace);
                 incominElementSuccess = false;
             }
             try
@@ -102,7 +106,7 @@ namespace InsightClientLibrary
             }
             catch (Exception e)
             {
-                logger.Error("Setting sources failed" + "\n" + e.Message);
+                logger.Error("Setting sources failed" + "\n" + e.Message + "|" + e.StackTrace);
                 soureSetSuccess = false;
             }
             try
@@ -113,42 +117,21 @@ namespace InsightClientLibrary
             }
             catch (Exception e)
             {
-                logger.Error("graph build failed" + "\n" + e.Message);
+                logger.Error("graph build failed" + "\n" + e.Message + "|" + e.StackTrace);
                 buildGraphSuccess = false;
             }
 
             this.constructorSuceeded = initSuccess && incominElementSuccess && soureSetSuccess && buildGraphSuccess;
         }
-        /// <summary>
-        /// Creates a logger for a class
-        /// </summary>
-        /// <param name="debug"></param>
-        /// <returns></returns>
-        public NLog.Logger InitLogger(bool debug)
-        {
-            var config = new NLog.Config.LoggingConfiguration();
-
-            // Targets where to log to: File and Console
-            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = @"D:\Amir\Log.txt" };
-
-            // Rules for mapping loggers to targets            
-            if (debug)
-            {
-                config.AddRule(LogLevel.Trace, LogLevel.Fatal, logfile);
-            }
-            else config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
-
-
-            // Apply config           
-            NLog.LogManager.Configuration = config;
-            NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-            return logger;
-        }
         private void InitData()
         {
             for (int i = 0; i < this.RouteElements.Count; i++)
             {
-                this.ServiceElementNameList.Add(RouteElements[i].name, i);
+                if (!this.ServiceElementNameList.ContainsKey(RouteElements[i].name))
+                {
+                    this.ServiceElementNameList.Add(RouteElements[i].name, i);
+                }
+                else logger.Error("The following element is duplicated: {0}", RouteElements[i].name);
                 if (RouteElements[i] != null && RouteElements[i].objectType != null && RouteElements[i].objectType.name.Equals("Monitoring"))
                 {
                     MonitoringElementIndex = i;
@@ -157,7 +140,11 @@ namespace InsightClientLibrary
 
             foreach (var attributeType in IqlApiResult.objectTypeAttributes)
             {
-                ObjectAttributeTypesById.Add(attributeType.id, attributeType.name);
+                if (!ObjectAttributeTypesById.ContainsKey(attributeType.id))
+                {
+                    ObjectAttributeTypesById.Add(attributeType.id, attributeType.name);
+                }
+
             }
         }
         private void FindIncomingElements()
@@ -272,6 +259,7 @@ namespace InsightClientLibrary
                                 {
                                     next = allElements[allElements.IndexOf(next)];
                                 }
+                                else allElements.Add(next);
                                 if (!next.IncomingElements.Contains(prev))
                                 {
                                     next.AddIncomingElement(prev);
@@ -281,7 +269,10 @@ namespace InsightClientLibrary
                                 {
                                     prev.AddOutgoingElement(next);
                                 }
-                                nextLevelElements.Add(next);
+                                if (!nextLevelElements.Contains(next))
+                                {
+                                    nextLevelElements.Add(next);
+                                }
                             }
                         }
                     }

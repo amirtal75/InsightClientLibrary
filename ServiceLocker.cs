@@ -5,7 +5,7 @@ using NLog;
 namespace InsightClientLibrary
 {
     /// <summary>
-    /// Class with methods used to extract data for locking elements in a relevant equipment
+    /// Class with methods used to extract data for locking elements in a corresponding equipment
     /// </summary>
     public class ServiceLocker
     {
@@ -25,41 +25,14 @@ namespace InsightClientLibrary
         /// <param name="pop">the name of the pop the script runs for</param>
         /// <param name="username">the username for Insight login</param>
         /// <param name="password">the password for Insight login</param>
-        public ServiceLocker(bool _debug, string pop,string username, string password)
+        public ServiceLocker(bool _debug, string pop, string username, string password)
         {
             LastLockedUUID1 = "";
             LastSerachedUuidGraph = null;
             Debug = _debug;
             logger = NLog.LogManager.GetCurrentClassLogger();
-            this.Client = new InsightClient(Debug, pop, username,password);
+            this.Client = new InsightClient(Debug, pop, username, password);
             this.Pop = pop;
-        }
-        /// <summary>
-        /// Creates a logger for a class
-        /// </summary>
-        /// <param name="debug"></param>
-        /// <param name="className"></param>
-        /// <returns></returns>
-        public NLog.Logger InitLogger(bool debug, string className)
-        {
-            var config = new NLog.Config.LoggingConfiguration();
-
-            // Targets where to log to: File and Console
-            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = @"D:\Amir\Log.txt" };
-
-            // Rules for mapping loggers to targets            
-            if (debug)
-            {
-                config.AddRule(LogLevel.Trace, LogLevel.Fatal, logfile);
-            }
-            else config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
-
-
-            // Apply config           
-            NLog.LogManager.Configuration = config;
-            //NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-            NLog.Logger logger = NLog.LogManager.GetLogger(className);
-            return logger;
         }
         /// <summary>
         /// The pop the service is bieng locked for
@@ -96,17 +69,30 @@ namespace InsightClientLibrary
             LastSerachedUuidGraph = null;
             Debug = _debug;
             logger = NLog.LogManager.GetCurrentClassLogger();
-            this.Client = new InsightClient(Debug,pop);
-            if (!Client.AuthenticationTest.Equals("OK"))
+            try
             {
-                ClientAuthenticated = false;
-                return;
+                this.Pop = pop;
+                this.Client = new InsightClient(Debug, pop);
+                if (!Client.AuthenticationTest.Equals("OK"))
+                {
+                    ClientAuthenticated = false;
+                    return;
+                }
             }
-            this.Pop = pop;
+            catch (InsightUserAthenticationException e)
+            {
+                throw e;
+            }
+            catch (Exception e)
+            {
+                logger.Fatal("Crash due to unknown issue in Service locker: |" + e.Message + "|" + e.StackTrace);
+                throw e;
+            }
+
 
         }
 
-        
+
         private List<LockableElement> GetSourceLockElement(string uuid, string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel, GraphElement source)
         {
             List<GraphElement> list = new List<GraphElement>();
@@ -119,11 +105,18 @@ namespace InsightClientLibrary
                 {
                     return null;
                 }
+                List<GraphElement> graphLockables = new List<GraphElement>();
                 list = new List<GraphElement>();
                 list.Add(source);
-                var graphLockables = lastSerachedUuidGraph.getLockableElements(list, Pop);
+                if (pop.Equals(""))
+                {
+                    graphLockables.AddRange(lastSerachedUuidGraph.getLockableElements(list, "EHA"));
+                    graphLockables.AddRange(lastSerachedUuidGraph.getLockableElements(list, "MUC"));
+                }
+                else graphLockables.AddRange(lastSerachedUuidGraph.getLockableElements(list, Pop));
+
                 List<GraphElement> nextLockables = new List<GraphElement>(graphLockables);
-                LockableElement toLock;
+                List<LockableElement> toLock;
                 while (nextLockables.Count > 0)
                 {
                     graphLockables = nextLockables;
@@ -134,7 +127,7 @@ namespace InsightClientLibrary
                         toLock = GetLockElement(destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, lastSerachedUuidGraph, source, lockable);
                         if (toLock != null)
                         {
-                            answer.Add(toLock);
+                            answer.AddRange(toLock);
                         }
                     }
                     foreach (var lockableElement in answer)
@@ -160,17 +153,32 @@ namespace InsightClientLibrary
             }
             catch (IllegalNameException e)
             {
-                logger.Error(e.Message);
+                logger.Error(e.Message + "|" + e.StackTrace);
                 throw e;
             }
-            catch (InsighClientLibraryUnknownError e)
+            catch (InsighClientLibraryUnknownErrorException e)
             {
-                logger.Fatal(e.Message);
+                logger.Fatal(e.Message + "|" + e.StackTrace);
                 throw e;
             }
-            catch (CorruptedInsightData e)
+            catch (CorruptedInsightDataException e)
             {
-                logger.Error(e.Message);
+                logger.Error(e.Message + "|" + e.StackTrace);
+                throw e;
+            }
+            catch (RestSharpException e)
+            {
+                logger.Fatal(e.Message + "|" + e.StackTrace);
+                throw new RestSharpException(e.Message + "|" + e.StackTrace);
+            }
+            catch (UnsuccessfullResponseException e)
+            {
+                logger.Error(e.Message + "|" + e.StackTrace);
+                throw new UnsuccessfullResponseException(e.Message + "|" + e.StackTrace);
+            }
+            catch (Exception e)
+            {
+                logger.Fatal("Unknwon error: |" + e.Message + "|" + e.StackTrace);
                 throw e;
             }
 
@@ -186,35 +194,58 @@ namespace InsightClientLibrary
         /// <param name="destinationIrdName"></param>
         /// <param name="destinationIrdModel"></param>
         /// <returns></returns>
-        public Dictionary<GraphElement,List<LockableElement>> GetSourcesLockElement(string uuid, string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel)
+        public Dictionary<GraphElement, List<LockableElement>> GetSourcesLockElement(string uuid, string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel)
         {
             LastLockedUUID = uuid;
             try
             {
                 ServiceGraph graph = client.GetServiceGraph(uuid);
+                if (graph == null)
+                {
+                    logger.Error("the graph for: {0} is null", uuid);
+                    return null;
+                }
                 lastSerachedUuidGraph = graph;
                 Dictionary<GraphElement, List<LockableElement>> answer = new Dictionary<GraphElement, List<LockableElement>>();
+                List<LockableElement> tmp = null;
                 foreach (var source in graph.Sources)
                 {
-                    answer.Add(source, GetSourceLockElement(uuid, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, source));
+                    tmp = GetSourceLockElement(uuid, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, source);
+                    if (tmp.Count > 0)
+                    {
+                        answer.Add(source, tmp);
+                    }
                 }
                 return answer;
             }
             catch (IllegalNameException e)
             {
-                logger.Error(e.Message);
+                logger.Error(e.Message + "|" + e.StackTrace);
                 throw e;
             }
-            catch (InsighClientLibraryUnknownError e)
+            catch (InsighClientLibraryUnknownErrorException e)
             {
-                logger.Fatal(e.Message);
+                logger.Fatal(e.Message + "|" + e.StackTrace);
+                throw e;
+            }
+            catch (CorruptedInsightDataException e)
+            {
+                logger.Error(e.Message + "|" + e.StackTrace);
+                throw e;
+            }
+            catch (Exception e)
+            {
+                logger.Fatal(e.Message + "|" + e.StackTrace);
                 throw e;
             }
 
         }
         private static bool ValidLockElement(LockableElement toLock)
         {
-
+            if (toLock == null)
+            {
+                return false;
+            }
             bool answer = false;
             bool legalMulticast = false;
             bool downlinkSymbolRate = true;
@@ -225,7 +256,7 @@ namespace InsightClientLibrary
             if (toLock.GetType() == typeof(IPLockableElement))
             {
                 IPLockableElement iPLockable = (IPLockableElement)toLock;
-                answer =  Tools.LegalIPV4(iPLockable.multicastMain) || Tools.LegalIPV4(iPLockable.multicastBackup);
+                answer = Tools.LegalIPV4(iPLockable.multicastMain) || Tools.LegalIPV4(iPLockable.multicastBackup);
             }
             else if (toLock.GetType() == typeof(RFLockableElement))
             {
@@ -260,9 +291,9 @@ namespace InsightClientLibrary
         /// <param name="source"></param>
         /// <param name="elementToLock"></param>
         /// <returns></returns>
-        public LockableElement GetLockElement(string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel, ServiceGraph graph, GraphElement source, GraphElement elementToLock)
+        public List<LockableElement> GetLockElement(string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel, ServiceGraph graph, GraphElement source, GraphElement elementToLock)
         {
-            LockableElement answer = null;
+            List<LockableElement> answer = new List<LockableElement>();
 
             string serviceID = "";
             string attributeName = "";
@@ -282,7 +313,10 @@ namespace InsightClientLibrary
             string downlinkSatellite = "";
             string downlinkPolarity = "";
             string department = "";
-
+            string transponder = "";
+            string rollOff = "";
+            string FEC = "";
+            string ElementStatus = "";
 
             RFLockableElement rFLockable = null;
             IPLockableElement iPLockable = null;
@@ -317,6 +351,10 @@ namespace InsightClientLibrary
                 if (attribute.ObjectAttributeValues != null && attribute.ObjectAttributeValues.Count > 0)
                 {
                     attributeName = elementToLock.ObjectAttributeTypesById[attribute.objectTypeAttributeId];
+                    if (attributeName.Equals("Element Status"))
+                    {
+                        ElementStatus = attribute.ObjectAttributeValues[0].displayValue;
+                    }
                     switch (elementType.ToLower())
                     {
                         case "downlink":
@@ -333,6 +371,15 @@ namespace InsightClientLibrary
                                     break;
                                 case "Downlink Satellite":
                                     downlinkSatellite = attribute.ObjectAttributeValues[0].displayValue;
+                                    break;
+                                case "Transponder":
+                                    transponder = attribute.ObjectAttributeValues[0].displayValue;
+                                    break;
+                                case "Downlink FEC":
+                                    FEC = attribute.ObjectAttributeValues[0].displayValue;
+                                    break;
+                                case "Downlink Rolloff":
+                                    rollOff = attribute.ObjectAttributeValues[0].displayValue;
                                     break;
                                 case "Downlink Polarity":
                                     downlinkPolarity = attribute.ObjectAttributeValues[0].displayValue;
@@ -367,6 +414,15 @@ namespace InsightClientLibrary
                                     break;
                                 case "Monitoring Satellite":// belongs to monitoring element
                                     downlinkSatellite = attribute.ObjectAttributeValues[0].displayValue;
+                                    break;
+                                case "Monitoring Transponder":
+                                    transponder = attribute.ObjectAttributeValues[0].displayValue;
+                                    break;
+                                case "Monitoring FEC":
+                                    FEC = attribute.ObjectAttributeValues[0].displayValue;
+                                    break;
+                                case "Monitoring Rolloff":
+                                    rollOff = attribute.ObjectAttributeValues[0].displayValue;
                                     break;
                                 case "Monitoring Frequency":// belongs to monitoring element
                                     downlinkFrequency = attribute.ObjectAttributeValues[0].displayValue;
@@ -407,6 +463,15 @@ namespace InsightClientLibrary
                                     break;
                                 case "Uplink Service ID":// belongs to uplink element
                                     serviceID = attribute.ObjectAttributeValues[0].displayValue;
+                                    break;
+                                case "Transponder":
+                                    transponder = attribute.ObjectAttributeValues[0].displayValue;
+                                    break;
+                                case "Uplink FEC":
+                                    FEC = attribute.ObjectAttributeValues[0].displayValue;
+                                    break;
+                                case "Uplink Rolloff":
+                                    rollOff = attribute.ObjectAttributeValues[0].displayValue;
                                     break;
                                 default:
                                     break;
@@ -577,34 +642,42 @@ namespace InsightClientLibrary
 
             if (elementType.Equals("Downlink") || elementType.Equals("Monitoring"))
             {
-                logger.Debug("Given Element: {0}, Multilockable returned.", elementType);
-                multiLockable = new MultiLockableElement(multicastEHAMain, multicastEHABackup, sourceIPMain, sourceIPBackup, downlinkFrequency, modulation, downlinkPolarity,
-                                downlinkSatellite, downlinkSymbolRate, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
-                answer = multiLockable;
-                logger.Debug("\nlockable element parameters:\n" + multiLockable.ToString());
-
+                if (Pop.ToLower().Equals("eha") || Pop.Equals(""))
+                {
+                    multiLockable = new MultiLockableElement(multicastEHAMain, multicastEHABackup, sourceIPMain, sourceIPBackup, downlinkFrequency, modulation, downlinkPolarity,
+                                                    downlinkSatellite, transponder, FEC, rollOff, downlinkSymbolRate, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
+                    answer.Add(multiLockable);
+                }
+                if (Pop.ToLower().Equals("muc") || Pop.Equals(""))
+                {
+                    multiLockable = new MultiLockableElement(multicastMUC, multicastMUCBackup, sourceIPMain, sourceIPBackup, downlinkFrequency, modulation, downlinkPolarity,
+                                downlinkSatellite, transponder, FEC, rollOff, downlinkSymbolRate, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
+                    answer.Add(multiLockable);
+                }
+                logger.Debug("lockable element parameters:|" + multiLockable.ToString());
             }
             else if (elementType.Equals("Uplink"))
             {
                 logger.Debug("Given Element: {0}, RFLockable returned.", elementType);
-                rFLockable = new RFLockableElement(downlinkFrequency, modulation, downlinkPolarity, downlinkSatellite, downlinkSymbolRate, destinationIrdManagmentIp,
+                rFLockable = new RFLockableElement(downlinkFrequency, modulation, downlinkPolarity, downlinkSatellite, transponder, rollOff, FEC, downlinkSymbolRate, destinationIrdManagmentIp,
                                                     destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
-                answer = rFLockable;
-                logger.Debug("\nlockable element parameters:\n" + rFLockable.ToString());
+                answer.Add(rFLockable);
+                logger.Debug("lockable element parameters:|" + rFLockable.ToString());
             }
             else
             {
                 logger.Debug("Given Element: {0}, IPLockable returned.", elementType);
-                if (Pop.ToLower().Equals("eha"))
+                if (Pop.ToLower().Equals("eha") || Pop.Equals(""))
                 {
                     iPLockable = new IPLockableElement(multicastEHAMain, multicastEHABackup, sourceIPMain, sourceIPBackup, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
+                    answer.Add(iPLockable);
                 }
-                else if (Pop.ToLower().Equals("muc"))
+                if (Pop.ToLower().Equals("muc") || Pop.Equals(""))
                 {
-                    iPLockable = new IPLockableElement(multicastMUC, "", sourceIPMain, sourceIPBackup, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
+                    iPLockable = new IPLockableElement(multicastMUC, multicastMUCBackup, sourceIPMain, sourceIPBackup, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
+                    answer.Add(iPLockable);
                 }
-                answer = iPLockable;
-                logger.Debug("\nlockable element parameters:\n" + iPLockable.ToString());
+                logger.Debug("lockable element parameters:|" + iPLockable.ToString());
             }
             return answer;
         }
@@ -638,6 +711,9 @@ namespace InsightClientLibrary
         /// <param name="modulation"></param>
         /// <param name="downlinkPolarity"></param>
         /// <param name="downlinkSatellite"></param>
+        /// <param name="transponder"></param>
+        /// <param name="downlinkFEC"></param>
+        /// <param name="downlinkRollOff"></param>
         /// <param name="downlinkSymbolRate"></param>
         /// <param name="destinationIrdManagmentIp"></param>
         /// <param name="destinationIrdName"></param>
@@ -646,7 +722,7 @@ namespace InsightClientLibrary
         /// <param name="serviceID"></param>
         /// <param name="source"></param>
         /// <param name="lockableElement"></param>
-        public RFLockableElement(string downlinkFrequency, string modulation, string downlinkPolarity, string downlinkSatellite, string downlinkSymbolRate,
+        public RFLockableElement(string downlinkFrequency, string modulation, string downlinkPolarity, string downlinkSatellite, string transponder, string downlinkFEC, string downlinkRollOff, string downlinkSymbolRate,
                                  string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel, string pop, string serviceID, GraphElement source, GraphElement lockableElement) :
                                         base(destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, pop, serviceID, source, lockableElement)
         {
@@ -685,7 +761,9 @@ namespace InsightClientLibrary
             this.downlinkPolarity = downlinkPolarity;
             this.downlinkSatellite = downlinkSatellite;
             this.downlinkSymbolRate = downlinkSymbolRate;
-
+            this.downlinkFEC = downlinkFEC;
+            this.downlinkRollOff = downlinkRollOff;
+            this.transponder = transponder;
         }
         /// <summary> </summary>
         public string downlinkFrequency { get; set; }
@@ -738,13 +816,13 @@ namespace InsightClientLibrary
         public override string ToString()
 
         {
-            return base.ToString() + 
-                "downlinkFrequency: " + downlinkFrequency + "\n" +
-                "downlinkLocalOsscilator: " + downlinkLocalOsscilator + "\n" +
-                "modulation: " + modulation + "\n" +
-                "downlinkPolarity: " + downlinkPolarity + "\n" +
-                "downlinkSatellite: " + downlinkSatellite + "\n" +
-                "downlinkSymbolRate: " + downlinkSymbolRate + "\n";
+            return base.ToString() +
+                "downlinkFrequency: " + downlinkFrequency + "|" +
+                "downlinkLocalOsscilator: " + downlinkLocalOsscilator + "|" +
+                "modulation: " + modulation + "|" +
+                "downlinkPolarity: " + downlinkPolarity + "|" +
+                "downlinkSatellite: " + downlinkSatellite + "|" +
+                "downlinkSymbolRate: " + downlinkSymbolRate + "|";
         }
     }
 
@@ -802,10 +880,10 @@ namespace InsightClientLibrary
 
         {
             return base.ToString() +
-                "multicastMain: " + multicastMain + "\n" +
-                "multicastBackup: " + multicastBackup + "\n" +
-                "sourceIpMain: " + sourceIpMain + "\n" +
-                "sourceIpBU: " + sourceIpBU + "\n";
+                "multicastMain: " + multicastMain + "|" +
+                "multicastBackup: " + multicastBackup + "|" +
+                "sourceIpMain: " + sourceIpMain + "|" +
+                "sourceIpBU: " + sourceIpBU + "|";
         }
     }
     /// <summary>
@@ -818,10 +896,9 @@ namespace InsightClientLibrary
         /// </summary>
         /// <returns></returns>
         public MultiLockableElement(string multicastMain, string multicastBackup, string sourceIpMain, string sourceIpBU, string downlinkFrequency, string modulation, string downlinkPolarity,
-
-                                    string downlinkSatellite, string downlinkSymbolRate, string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel, string pop,
+                                    string downlinkSatellite, string transponder, string FEC, string rollOff, string downlinkSymbolRate, string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel, string pop,
                                     string serviceID, GraphElement source, GraphElement elementToLock) :
-                                        base(downlinkFrequency, modulation, downlinkPolarity, downlinkSatellite, downlinkSymbolRate,
+                                        base(downlinkFrequency, modulation, downlinkPolarity, downlinkSatellite, transponder, FEC, rollOff, downlinkSymbolRate,
                                         destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, pop, serviceID, source, elementToLock)
         {
             this.multicastMain = multicastMain;
@@ -869,17 +946,17 @@ namespace InsightClientLibrary
 
         {
             return base.ToString() +
-                "multicastMain: " + multicastMain + "\n" +
-                "multicastBackup: " + multicastBackup + "\n" +
-                "sourceIpMain: " + sourceIpMain + "\n" +
-                "sourceIpBU: " + sourceIpBU + "\n";
+                "multicastMain: " + multicastMain + "|" +
+                "multicastBackup: " + multicastBackup + "|" +
+                "sourceIpMain: " + sourceIpMain + "|" +
+                "sourceIpBU: " + sourceIpBU + "|";
         }
     }
     /// <summary>
     /// abstract base class for a lockable element
     /// </summary>
     public abstract class LockableElement
-    {   
+    {
         /// <summary>
         /// 
         /// </summary>
@@ -962,14 +1039,14 @@ namespace InsightClientLibrary
         /// <returns></returns>
         public override string ToString()
         {
-            return "Element Name: " + elementName + "\n" +
-                "Element Type: " + elementType + "\n" +
-                "Source Element Name: " + sourceElement.CurrentElement.name + "\n" +
-                "Source Element Type: " + sourceElement.CurrentElement.objectType.name + "\n" +
-                "POP: " + pop + "\n" +
-                "Receiver Name: " + destinationIrdName + "\n" +
-                "Receiver Model: " + destinationIrdModel + "\n" +
-                "Receiver Managment IP: " + destinationIrdManagmentIp + "\n";
+            return "Element Name: " + elementName + "|" +
+                "Element Type: " + elementType + "|" +
+                "Source Element Name: " + sourceElement.CurrentElement.name + "|" +
+                "Source Element Type: " + sourceElement.CurrentElement.objectType.name + "|" +
+                "POP: " + pop + "|" +
+                "Receiver Name: " + destinationIrdName + "|" +
+                "Receiver Model: " + destinationIrdModel + "|" +
+                "Receiver Managment IP: " + destinationIrdManagmentIp + "|";
         }
     }
 }
