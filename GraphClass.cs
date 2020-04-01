@@ -191,7 +191,7 @@ namespace InsightClientLibrary
         private List<GraphElement> FindSources()
         {
             List<GraphElement> sources = new List<GraphElement>();
-            List<GraphElement> start = new List<GraphElement>();
+            this.RouteStart = new List<GraphElement>();
             for (int i = 0; i < ElementIncomingElementIndexes.Length; i++)
             {
                 if (ElementIncomingElementIndexes[i] == null)
@@ -200,7 +200,7 @@ namespace InsightClientLibrary
                     {
                         sources.Add(new GraphElement(RouteElements[i], 0, this.ObjectAttributeTypesById));
                     }
-                    start.Add(new GraphElement(RouteElements[i], 0, this.ObjectAttributeTypesById));
+                    this.RouteStart.Add(new GraphElement(RouteElements[i], 0, this.ObjectAttributeTypesById));
                 }
             }
 
