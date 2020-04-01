@@ -6,7 +6,7 @@ using RestSharp.Authenticators;
 using NLog;
 using Excel = Microsoft.Office.Interop.Excel;
 using System.IO;
-
+using System.Net;
 
 namespace InsightClientLibrary
 {
@@ -464,6 +464,7 @@ namespace InsightClientLibrary
                 InsightRestClient.Authenticator = new HttpBasicAuthenticator(username, password);
                 InsightRestClient.Timeout = 60000;
                 InsightRestClient.AddDefaultHeader("User-Agent", "DataMiner");
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
                 return InsightRestClient;
             }
             catch (Exception e)
