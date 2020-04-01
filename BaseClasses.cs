@@ -281,7 +281,11 @@ namespace InsightClientLibrary
                         int forbiddenIndex = nameToModify.IndexOf(forbiddenSymbol);
                         if (forbiddenIndex < nameToModify.Length - 1)
                         {
-                            nameToModify = nameToModify.Substring(forbiddenIndex + 1);
+                            if ((nameToModify.Length - 1) - forbiddenIndex > forbiddenIndex)
+                            {
+                                nameToModify = nameToModify.Substring(forbiddenIndex + 1);
+                            }
+                            else nameToModify = nameToModify.Substring(0, forbiddenIndex - 1);
                         }
                         else nameToModify = "";
                     }

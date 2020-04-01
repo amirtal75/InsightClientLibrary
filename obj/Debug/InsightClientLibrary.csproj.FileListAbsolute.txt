@@ -9,3 +9,4 @@ C:\Users\amirt\source\repos\InsightClientLibrary\InsightClientLibrary\bin\Debug\
 C:\Users\amirt\source\repos\InsightClientLibrary\InsightClientLibrary\obj\Debug\InsightClientLibrary.csproj.CopyComplete
 C:\Users\amirt\source\repos\InsightClientLibrary\InsightClientLibrary\obj\Debug\InsightClientLibrary.dll
 C:\Users\amirt\source\repos\InsightClientLibrary\InsightClientLibrary\obj\Debug\InsightClientLibrary.pdb
+C:\Users\amirt\source\repos\InsightClientLibrary\InsightClientLibrary\obj\Debug\InsightClientLibrary.csprojAssemblyReference.cache
