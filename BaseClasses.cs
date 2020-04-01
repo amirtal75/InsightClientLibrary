@@ -78,101 +78,87 @@ namespace InsightClientLibrary
 
 
         /// <summary> </summary>
-        public Service(IqlApiResult service, NLog.Logger logger, string originalUUID)
+        public Service(ObjectEntry selectedEntry, List<ObjectTypeAttribute> objectTypeAttributes, string originalUUID)
 
         {
-            if (service != null && service.objectEntries != null && service.objectEntries.Count > 0)
+            AttributeNamesByIds = new Dictionary<string, int>();
+            AttributeByIds = new Dictionary<int, ObjectAttribute>();
+            AttributeIdsByNames = new Dictionary<int, string>();
+            AttributeTypesByIds = new Dictionary<int, ObjectTypeAttribute>();
+            foreach (var attribute in selectedEntry.attributes)
             {
-                ObjectEntry selectedEntry = service.objectEntries[0];
-                if (service.objectEntries.Count > 1)
-                {
-                    foreach (var entry in service.objectEntries)
-                    {
-                        string name = entry.label;
-                        if (name.Length - originalUUID.Length >= 0 && name.Length - originalUUID.Length <= 0)
-                        {
-                            selectedEntry = entry;
-                        }
-                    }
-                }
-                AttributeNamesByIds = new Dictionary<string, int>();
-                AttributeByIds = new Dictionary<int, ObjectAttribute>();
-                AttributeIdsByNames = new Dictionary<int, string>();
-                AttributeTypesByIds = new Dictionary<int, ObjectTypeAttribute>();
-                foreach (var attribute in selectedEntry.attributes)
-                {
-                    AttributeByIds.Add(attribute.objectTypeAttributeId, attribute);
-                }
-                foreach (var typeAttribute in service.objectTypeAttributes)
-                {
-                    AttributeNamesByIds.Add(typeAttribute.name, typeAttribute.id);
-                    AttributeIdsByNames.Add(typeAttribute.id, typeAttribute.name);
-                    AttributeTypesByIds.Add(typeAttribute.id, typeAttribute);
-                    bool hasThisAttribute = AttributeByIds.ContainsKey(typeAttribute.id);
-                    ObjectAttribute attribute = AttributeByIds[typeAttribute.id];
-                    List<ObjectAttributeValue> attributeValues = attribute.ObjectAttributeValues;
+                AttributeByIds.Add(attribute.objectTypeAttributeId, attribute);
+            }
+            foreach (var typeAttribute in objectTypeAttributes)
+            {
+                AttributeNamesByIds.Add(typeAttribute.name, typeAttribute.id);
+                AttributeIdsByNames.Add(typeAttribute.id, typeAttribute.name);
+                AttributeTypesByIds.Add(typeAttribute.id, typeAttribute);
+                bool hasThisAttribute = AttributeByIds.ContainsKey(typeAttribute.id);
+                ObjectAttribute attribute = AttributeByIds[typeAttribute.id];
+                List<ObjectAttributeValue> attributeValues = attribute.ObjectAttributeValues;
 
-                    // if all above values are valid then set fields
-                    if (typeAttribute != null && AttributeByIds != null && hasThisAttribute && attribute != null
-                        && attributeValues != null && attributeValues.Count > 0 && attributeValues[0] != null)
+                // if all above values are valid then set fields
+                if (typeAttribute != null && AttributeByIds != null && hasThisAttribute && attribute != null
+                    && attributeValues != null && attributeValues.Count > 0 && attributeValues[0] != null)
+                {
+                    switch (typeAttribute.name)
                     {
-                        switch (typeAttribute.name)
-                        {
-                            case "Key":
-                                Key = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
-                                break;
-                            case "Name":
-                                Name = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
-                                break;
-                            case "Service Confluence URL":
-                                ConfluenceURL = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
-                                break;
-                            case "Status":
-                                Status = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
-                                break;
-                            case "Broadcast Time":
-                                BroadcastTime = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
-                                break;
-                            case "Client VPN":
-                                ClientVPN = Convert.ToBoolean(typeAttribute.Label);
-                                break;
-                            case "UUID/TKSID":
-                                UUID = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
-                                break;
-                            case "Service Owner":
-                                ServiceOwner = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
-                                break;
-                            case "Content Type":
-                                ContentType = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
-                                break;
-                            case "Service Category":
-                                ServiceCategory = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
-                                break;
-                            case "Distribution Channel":
-                                DistributionChannel = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
-                                break;
-                            case "Service Role":
-                                ServiceRole = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
-                                break;
-                            case "Service Remarks(Customer Service)":
-                                ServiceRemarks = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
-                                break;
-                            case "Start of Service":
-                                StartofService = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
-                                break;
-                            case "End of Service":
-                                EndofService = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
-                                break;
-                            case "Service Documentation Approved":
-                                EndofService = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
-                                break;
-                            default:
-                                break;
-                        }
-
+                        case "Key":
+                            Key = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
+                            break;
+                        case "Name":
+                            Name = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
+                            break;
+                        case "Service Confluence URL":
+                            ConfluenceURL = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
+                            break;
+                        case "Status":
+                            Status = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
+                            break;
+                        case "Broadcast Time":
+                            BroadcastTime = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
+                            break;
+                        case "Client VPN":
+                            ClientVPN = Convert.ToBoolean(typeAttribute.Label);
+                            break;
+                        case "UUID/TKSID":
+                            UUID = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
+                            break;
+                        case "Service Owner":
+                            ServiceOwner = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
+                            break;
+                        case "Content Type":
+                            ContentType = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
+                            break;
+                        case "Service Category":
+                            ServiceCategory = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
+                            break;
+                        case "Distribution Channel":
+                            DistributionChannel = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
+                            break;
+                        case "Service Role":
+                            ServiceRole = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
+                            break;
+                        case "Service Remarks(Customer Service)":
+                            ServiceRemarks = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
+                            break;
+                        case "Start of Service":
+                            StartofService = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
+                            break;
+                        case "End of Service":
+                            EndofService = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
+                            break;
+                        case "Service Documentation Approved":
+                            EndofService = AttributeByIds[typeAttribute.id].ObjectAttributeValues[0].displayValue;
+                            break;
+                        default:
+                            break;
                     }
+
                 }
             }
+            
         }
     }
     /// <summary>
@@ -227,6 +213,53 @@ namespace InsightClientLibrary
         public static bool IsValidIqlResult(IqlApiResult result)
         {
             return (result != null && (result.objectEntries != null) && (result.objectTypeAttributes != null));
+        }
+        /// <summary>
+        /// This function will be used when the uuid was modified due to the presence of illegal Insight APi symbols and the iql service query returned more than one object entry.
+        /// meaning the uuid modified caused loss of uniquencess and returned multiple matching services.
+        ///this function removes unrelated services and elements in order to construct a correct graph.
+        /// </summary>
+        /// <param name="originalUUID"></param>
+        /// <param name="serviceResult"></param>
+        /// <param name="elementResult"></param>
+        public static void UniquenessLostFix(string originalUUID, ref IqlApiResult serviceResult, ref IqlApiResult elementResult)
+        {
+            List<Service> services = new List<Service>();
+            List<ObjectEntry> CorrectService = new List<ObjectEntry>();
+            foreach (var entry in serviceResult.objectEntries)
+            {
+                services.Add(new Service(entry, serviceResult.objectTypeAttributes, ""));
+            }
+            for (int i = 0; i < serviceResult.objectEntries.Count; i++)
+            {
+                if (serviceResult.objectEntries[i].name.Equals(originalUUID))
+                {
+                    CorrectService.Add(serviceResult.objectEntries[i]);
+                    break;
+                }
+            }
+            serviceResult.objectEntries = CorrectService;
+
+
+            List<ObjectEntry> elementEntries = new List<ObjectEntry>();
+            foreach (var entry in elementResult.objectEntries)
+            {
+                foreach (var attribute in entry.attributes)
+                {
+                    if (attribute.objectTypeAttributeId == 1781 && attribute.ObjectAttributeValues != null && attribute.ObjectAttributeValues.Count > 0)
+                    {
+                        foreach (var attributeValue in attribute.ObjectAttributeValues)
+                        {
+                            if (attributeValue.displayValue.Equals(originalUUID))
+                            {
+                                elementEntries.Add(entry);
+                            }
+                        }
+                    }
+                }
+            }
+
+            elementResult.objectEntries = elementEntries;
         }
         /// <summary>
         /// Checks the given name for illegal Insight API symbols.

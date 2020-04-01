@@ -155,15 +155,46 @@ namespace InsightClientLibrary
                 graphElementIncomingElementNames = new List<string>();
                 bool modified = false;
                 var modifiedElementName = Tools.ModifyUnspportedInsightNameConvention(graphElement.CurrentElement.name, forbiddenInsightApiQuerySymbols);
+                string nameEqualizer = "=";
+                if (!modifiedElementName.Equals(graphElement.CurrentElement.name))
+                {
+                    nameEqualizer = "LIKE";
+                }
                 string equalizer = "=";
                 if (graph.modifiedUUID)
                 {
                     equalizer = "LIKE";
                 }
+
+                string modifiedServiceName = Tools.ModifyUnspportedInsightNameConvention(graph.Service.Name, forbiddenInsightApiQuerySymbols);
                 string[] getGroups = new string[2] { "", "" };
                 string groups = InsightGetByIqlObjectIdGroup(getGroups, "Element", "", modified);
-                string query = "object HAVING outboundReferences(Name " + equalizer + " " + graph.Service.Name + ") AND " + groups + "object HAVING inboundReferences(Name = " + modifiedElementName + ")";
+                string query = "object HAVING outboundReferences(Name " + equalizer + " " + modifiedServiceName + ") AND " + groups + "object HAVING inboundReferences(Name " + nameEqualizer + " " + modifiedElementName + ")";
                 var InsightIncomingElements = InsightGetByGeneralIqlQuery(query);
+                List<ObjectEntry> elementEntries = new List<ObjectEntry>();
+                foreach (var entry in InsightIncomingElements.objectEntries)
+                {
+                    if (!entry.name.Equals(graphElement.CurrentElement.name))
+                    {
+                        foreach (var attribute in entry.attributes)
+                        {
+                            if (attribute.objectTypeAttributeId == 1781 && attribute.ObjectAttributeValues != null && attribute.ObjectAttributeValues.Count > 0)
+                            {
+                                foreach (var attributeValue in attribute.ObjectAttributeValues)
+                                {
+                                    if (attributeValue.displayValue.Equals(graph.Service.Name))
+                                    {
+                                        elementEntries.Add(entry);
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+                }
+
+                
+                InsightIncomingElements.objectEntries = elementEntries;
                 var GraphRouteIncomingElements = graphElement.IncomingElements;
                 if (!Tools.IsValidIqlResult(InsightIncomingElements))
                 {
@@ -236,13 +267,14 @@ namespace InsightClientLibrary
                     string tmp = uuid.Substring(1, uuid.Length - 2);
                     modified = !tmp.Equals(originalUUID);
                 }
+                else modified = !uuid.Equals(originalUUID);
                 logger.Debug("The original uuid provided for this build: {0}", originalUUID);
                 logger.Debug("The modified uuid created for this build: {0}", uuid);
 
                 // Check if the IQL result are legal
                 IqlApiResult serviceResult = GetInsightObjectByName(uuid, "Root", "Service", modified);
                 IqlApiResult elementResult = GetInsightOutBoundByObjectName(uuid, "Element", modified);
-                if (!Tools.IsValidIqlResult(serviceResult) || !Tools.IsValidIqlResult(elementResult))
+                if (!Tools.IsValidIqlResult(serviceResult) || !Tools.IsValidIqlResult(elementResult) || serviceResult.objectEntries.Count == 0)
                 {
                     throw new CorruptedInsightDataException(uuid);
                 }
@@ -250,11 +282,12 @@ namespace InsightClientLibrary
                 // it must mean that the uuid contains an illegal naming conevtion, which gave false positive results after the name modification
                 if (serviceResult.objectEntries.Count > 1)
                 {
-                    throw new IllegalNameException(uuid + " Uniquness lost!!");
+                    Tools.UniquenessLostFix(originalUUID, ref serviceResult, ref elementResult);
+                    //throw new IllegalNameException(uuid + " Uniquness lost!!");
                 }
 
                 // From here the code logic starts
-                ServiceGraph graph = new ServiceGraph(elementResult, serviceResult, debug, uuid, modified);
+                ServiceGraph graph = new ServiceGraph(elementResult, serviceResult, debug, originalUUID, modified);
                 if (graph != null && graph.constructorSuceeded)
                 {
                     return graph;

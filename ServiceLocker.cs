@@ -17,6 +17,8 @@ namespace InsightClientLibrary
         private bool debug = false;
         private ServiceGraph lastSerachedUuidGraph;
         private bool clientAuthenticated = true;
+        /// <summary> If an exception was observed this value will save the information, null otherwise</summary>
+        public Exception ErrorException;
 
         /// <summary>
         /// Constructor for getting a service locker.
@@ -81,7 +83,7 @@ namespace InsightClientLibrary
             }
             catch (InsightUserAthenticationException e)
             {
-                throw e;
+                this.ErrorException = e;
             }
             catch (Exception e)
             {
@@ -277,6 +279,17 @@ namespace InsightClientLibrary
                 {
                     answer = downlinkSymbolRate && modulation && transponder && downlinkPolarity && downlinkSatellite;
                 }
+            }
+            else if (toLock.GetType() == typeof(MultiLockableElement))
+            {
+                MultiLockableElement multilockable = (MultiLockableElement)toLock;
+                downlinkSymbolRate = !multilockable.downlinkSymbolRate.Equals("");
+                modulation = !multilockable.modulation.Equals("");
+                transponder = !multilockable.transponder.Equals("");
+                downlinkPolarity = !multilockable.downlinkPolarity.Equals("");
+                downlinkSatellite = !multilockable.downlinkSatellite.Equals("");
+                legalMulticast = Tools.LegalIPV4(multilockable.multicastMain) || Tools.LegalIPV4(multilockable.multicastBackup);
+                answer = legalMulticast || (downlinkSymbolRate && modulation && transponder && downlinkPolarity && downlinkSatellite);
             }
             return answer;
         }
@@ -652,7 +665,10 @@ namespace InsightClientLibrary
                 {
                     multiLockable = new MultiLockableElement(multicastMUC, multicastMUCBackup, sourceIPMain, sourceIPBackup, downlinkFrequency, modulation, downlinkPolarity,
                                 downlinkSatellite, transponder, FEC, rollOff, downlinkSymbolRate, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
-                    answer.Add(multiLockable);
+                    if (!answer.Contains(multiLockable))
+                    {
+                        answer.Add(multiLockable);
+                    }
                 }
                 logger.Debug("lockable element parameters:|" + multiLockable.ToString());
             }
@@ -675,7 +691,10 @@ namespace InsightClientLibrary
                 if (Pop.ToLower().Equals("muc") || Pop.Equals(""))
                 {
                     iPLockable = new IPLockableElement(multicastMUC, multicastMUCBackup, sourceIPMain, sourceIPBackup, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
-                    answer.Add(iPLockable);
+                    if (!answer.Contains(iPLockable))
+                    {
+                        answer.Add(iPLockable);
+                    }
                 }
                 logger.Debug("lockable element parameters:|" + iPLockable.ToString());
             }

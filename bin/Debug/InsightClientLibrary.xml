@@ -72,7 +72,7 @@
         <member name="P:InsightClientLibrary.Service.ServiceDocumentationApproved">
             <summary> </summary>
         </member>
-        <member name="M:InsightClientLibrary.Service.#ctor(InsightClientLibrary.IqlApiResult,NLog.Logger,System.String)">
+        <member name="M:InsightClientLibrary.Service.#ctor(InsightClientLibrary.ObjectEntry,System.Collections.Generic.List{InsightClientLibrary.ObjectTypeAttribute},System.String)">
             <summary> </summary>
         </member>
         <member name="T:InsightClientLibrary.Tools">
@@ -96,6 +96,16 @@
             </summary>
             <param name="result"></param>
             <returns></returns>
+        </member>
+        <member name="M:InsightClientLibrary.Tools.UniquenessLostFix(System.String,InsightClientLibrary.IqlApiResult@,InsightClientLibrary.IqlApiResult@)">
+             <summary>
+             This function will be used when the uuid was modified due to the presence of illegal Insight APi symbols and the iql service query returned more than one object entry.
+             meaning the uuid modified caused loss of uniquencess and returned multiple matching services.
+            this function removes unrelated services and elements in order to construct a correct graph.
+             </summary>
+             <param name="originalUUID"></param>
+             <param name="serviceResult"></param>
+             <param name="elementResult"></param>
         </member>
         <member name="M:InsightClientLibrary.Tools.ModifyUnspportedInsightNameConvention(System.String,System.String)">
             <summary>
@@ -1020,6 +1030,9 @@
             <summary>
             Class with methods used to extract data for locking elements in a corresponding equipment
             </summary>
+        </member>
+        <member name="F:InsightClientLibrary.ServiceLocker.ErrorException">
+            <summary> If an exception was observed this value will save the information, null otherwise</summary>
         </member>
         <member name="M:InsightClientLibrary.ServiceLocker.#ctor(System.Boolean,System.String,System.String,System.String)">
             <summary>

@@ -26,6 +26,7 @@ namespace InsightClientLibrary
         public HashSet<int>[] ElementIncomingElementIndexes { get; set; }
         /// <value>List of the graph sources</value>
         public List<GraphElement> Sources { get; set; }
+        private List<GraphElement> RouteStart { get; set; }
         /// <value>List of the graph route end elements</value>
         public List<GraphElement> RouteEnd { get; set; }
         /// <value>index in the route element array reffering to the monitoring element of the graph</value>
@@ -56,7 +57,7 @@ namespace InsightClientLibrary
             debug = _debug;
             logger = NLog.LogManager.GetCurrentClassLogger();
             this.modifiedUUID = modifiedUUID;
-            this.Service = new Service(service, logger, uuid);
+            this.Service = new Service(service.objectEntries[0],service.objectTypeAttributes, uuid);
             if (root == null || service.objectEntries == null || service.objectTypeAttributes == null)
             {
                 return;
@@ -190,12 +191,16 @@ namespace InsightClientLibrary
         private List<GraphElement> FindSources()
         {
             List<GraphElement> sources = new List<GraphElement>();
-
+            List<GraphElement> start = new List<GraphElement>();
             for (int i = 0; i < ElementIncomingElementIndexes.Length; i++)
             {
                 if (ElementIncomingElementIndexes[i] == null)
                 {
-                    sources.Add(new GraphElement(RouteElements[i], 0, this.ObjectAttributeTypesById));
+                    if (!RouteElements[i].objectType.name.Equals("Encryption"))
+                    {
+                        sources.Add(new GraphElement(RouteElements[i], 0, this.ObjectAttributeTypesById));
+                    }
+                    start.Add(new GraphElement(RouteElements[i], 0, this.ObjectAttributeTypesById));
                 }
             }
 
@@ -204,7 +209,7 @@ namespace InsightClientLibrary
 
         private void BuildServiceGraph()
         {
-            List<GraphElement> tmp = Sources;
+            List<GraphElement> tmp = RouteStart;
             List<GraphElement> allElements = new List<GraphElement>();
             GraphElement[] array = null;
             while (tmp != null)
@@ -299,10 +304,10 @@ namespace InsightClientLibrary
             while (copy.Count > 0)
             {
                 max = FindMinLength(copy);
-                answer += "Printing level:\n" + max[0].graphLength;
+                answer += "Printing level:" + max[0].graphLength + "\n";
                 foreach (var item in max)
                 {
-                    answer += item.CurrentElement.name + " || ";
+                    answer += item.CurrentElement.name + " | ";
                     copy.Remove(item);
                 }
                 answer += "\n";
