@@ -215,7 +215,10 @@ namespace InsightClientLibrary
                     tmp = GetSourceLockElement(uuid, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, source);
                     if (tmp.Count > 0)
                     {
-                        answer.Add(source, tmp);
+                        if (!answer.ContainsKey(source))
+                        {
+                            answer.Add(source, tmp);
+                        }
                     }
                 }
                 return answer;
@@ -373,7 +376,7 @@ namespace InsightClientLibrary
                         case "downlink":
                             switch (attributeName)
                             {
-                                case "Downlink Frequency":
+                                case "Downlink Frequency (MHz)":
                                     downlinkFrequency = attribute.ObjectAttributeValues[0].displayValue;
                                     break;
                                 case "Downlink Standard/Modulation":
@@ -655,6 +658,11 @@ namespace InsightClientLibrary
 
             if (elementType.Equals("Downlink") || elementType.Equals("Monitoring"))
             {
+                /*MultiLockableElement multiLockableEHA = new MultiLockableElement(multicastEHAMain, multicastEHABackup, sourceIPMain, sourceIPBackup, downlinkFrequency, modulation, downlinkPolarity,
+                                                    downlinkSatellite, transponder, FEC, rollOff, downlinkSymbolRate, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
+                MultiLockableElement multiLockableMUC = new MultiLockableElement(multicastMUC, multicastMUCBackup, sourceIPMain, sourceIPBackup, downlinkFrequency, modulation, downlinkPolarity,
+                                                    downlinkSatellite, transponder, FEC, rollOff, downlinkSymbolRate, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
+                */
                 if (Pop.ToLower().Equals("eha") || Pop.Equals(""))
                 {
                     multiLockable = new MultiLockableElement(multicastEHAMain, multicastEHABackup, sourceIPMain, sourceIPBackup, downlinkFrequency, modulation, downlinkPolarity,
@@ -665,10 +673,14 @@ namespace InsightClientLibrary
                 {
                     multiLockable = new MultiLockableElement(multicastMUC, multicastMUCBackup, sourceIPMain, sourceIPBackup, downlinkFrequency, modulation, downlinkPolarity,
                                 downlinkSatellite, transponder, FEC, rollOff, downlinkSymbolRate, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
-                    if (!answer.Contains(multiLockable))
+                    if (answer.Count > 0)
                     {
-                        answer.Add(multiLockable);
+                        if (!answer.Contains(multiLockable) && (!multiLockable.multicastMain.Equals("") || !multiLockable.multicastBackup.Equals("")))
+                        {
+                            answer.Add(multiLockable);
+                        }
                     }
+                    else answer.Add(multiLockable);
                 }
                 logger.Debug("lockable element parameters:|" + multiLockable.ToString());
             }
@@ -686,15 +698,22 @@ namespace InsightClientLibrary
                 if (Pop.ToLower().Equals("eha") || Pop.Equals(""))
                 {
                     iPLockable = new IPLockableElement(multicastEHAMain, multicastEHABackup, sourceIPMain, sourceIPBackup, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
-                    answer.Add(iPLockable);
+                    if (!iPLockable.multicastMain.Equals("") || !iPLockable.multicastBackup.Equals(""))
+                    {
+                        answer.Add(iPLockable);
+                    }
                 }
                 if (Pop.ToLower().Equals("muc") || Pop.Equals(""))
                 {
                     iPLockable = new IPLockableElement(multicastMUC, multicastMUCBackup, sourceIPMain, sourceIPBackup, destinationIrdManagmentIp, destinationIrdName, destinationIrdModel, Pop.ToLower(), serviceID, source, elementToLock);
-                    if (!answer.Contains(iPLockable))
+                    if (answer.Count > 0)
                     {
-                        answer.Add(iPLockable);
+                        if (!answer.Contains(iPLockable) && (!iPLockable.multicastMain.Equals("") || !iPLockable.multicastBackup.Equals("")))
+                        {
+                            answer.Add(iPLockable);
+                        }
                     }
+                    else answer.Add(iPLockable);
                 }
                 logger.Debug("lockable element parameters:|" + iPLockable.ToString());
             }
@@ -748,27 +767,26 @@ namespace InsightClientLibrary
             this.downlinkLocalOsscilator = new List<string>();
             try
             {
-                int osscil = Convert.ToInt32(downlinkLocalOsscilator);
                 int frequency = Convert.ToInt32(downlinkFrequency);
                 if (frequency > 3050 && frequency < 4200)
                 {
                     this.downlinkLocalOsscilator.Add("5150");
                 }
-                else if (frequency > 10700 && frequency < 11850 && osscil == 9750)
+                if (frequency > 10700 && frequency < 11850)
                 {
                     this.downlinkLocalOsscilator.Add("9750");
                 }
-                else if (frequency > 10950 && frequency < 12100 && osscil == 10000)
+                if (frequency > 10950 && frequency < 12100)
                 {
                     this.downlinkLocalOsscilator.Add("10000");
                 }
-                else if (frequency > 11550 && frequency < 12700 && osscil == 10600)
+                if (frequency > 11550 && frequency < 12700)
                 {
                     this.downlinkLocalOsscilator.Add("10600");
                 }
-                else if (frequency > 11700 && frequency < 12850 && osscil == 10700)
+                if (frequency > 11700 && frequency < 12850)
                 {
-                    this.downlinkLocalOsscilator.Add("10700");
+                    this.downlinkLocalOsscilator.Add("10750");
                 }
             }
             catch (Exception)
