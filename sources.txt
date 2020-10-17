@@ -1,0 +1,128 @@
+1	100.5E AS5 C 5150 V	AsiaSat 5 (100.5 E) | Vertical | 5150 | Circular
+2	100.5E AS5 C 5150 H	AsiaSat 5 (100.5 E) | Horizontal | 5150 | Circular
+3	68.5 E INT-20 5150 V	Intelsat 20 (68.5 E) | Vertical | 5150
+4	68.5 E INT-20 5150 H	Intelsat 20 (68.5 E) | Horizontal | 5150
+5	46E Azers sat 9750 H	AzerSpace 1 (46 E) | Horizontal | 9750
+6	21.6E E21B  9750 V	Eutelsat 21B (21.5 E) | Vertical | 9750
+7	21.6E E21B  9750 H	Eutelsat 21B (21.5 E) | Horizontal | 9750
+8	16E E16A KU  9750 V	Eutelsat 16A (16 E) | Vertical | 9750
+9	16E E16A KU  10600 V	Eutelsat 16A (16 E) | Vertical | 10600
+10	16E E16A KU  9750 H	Eutelsat 16A (16 E) | Horizontal | 9750
+11	16E E16A KU  10600 H	Eutelsat 16A (16 E) | Horizontal | 10600
+12	10E E10A 9750 V	Eutelsat 10A (10 E) | Vertical | 9750
+13	5W EUT5 5150 LH	Eutelsat 5 West A (5 W) | Left | 5150
+14	10E E10A 9750 H	Eutelsat 10A (10 E) | Horizontal | 9750
+15	8W E8WB 10600 H	Eutelsat 8 West A&B&C (8 W) | Horizontal | 10600
+16	8W E8WB 9750 V	Eutelsat 8 West A&B&C (8 W) | Vertical | 9750
+17	7E E7B  9750 V -3.7M	Eutelsat 7A&7B (7 E) | Vertical | 9750 | 3 Meters
+18	7E E7B  10750 V-3.7M	Eutelsat 7A&7B (7 E) | Vertical | 10750 | 3 Meters
+19	7E E7B  9750 H-3.7M	Eutelsat 7A&7B (7 E) | Horizontal | 9750 | 3 Meters
+20	7E E7B  10600 H-3.7M	Eutelsat 7A&7B (7 E) | Horizontal | 10600 | 3 Meters
+21	3W ABS3A 9750 V	ABS 3A (3 W) | Vertical | 9750
+22	10E E10A 5150 RH	Eutelsat 10A (10 E) | Right | 5150
+23	46E AFR.SAT 5150 V	Africasat 1A (46 E) | Vertical | 5150
+24	23.5E AST-3B 10600 H	Astra 3B (23.5 E) | Horizontal | 10600
+25	22W SES4  10600 H	SES 4 (22 W) | Horizontal | 10600
+26	EHA8 V 10600/9750	EHA 8 | Vertical | 9750/10600
+27	EHA-8 H 10600/9750	EHA 8 | Horizontal | 9750/10600
+28	EHA10 9750/10750	EHA 10 | Versatile | 9750/10750
+29	H-14 9750/10750	H-14 | Versatile | 9750/10750
+30	H-15 9750/10750	H-15 | Versatile | 9750/10750
+31	5W EUT5 5150 RH	Eutelsat 5 West A (5 W) | Right | 5150
+32	Free	
+33	105.5E AS3/7  5150 H	AsiaSat 3&7 (100.5 E) | Horizontal | 5150
+34	105.5E AS3/7  5150 V	AsiaSat 3&7 (100.5 E) | Vertical | 5150
+35	91.5E MEASAT 5150 V	Measat 3&3A (91.5 E) | Vertical | 5150
+36	Free	
+37	E36B 36e 10750V	Eutelsat 36B (35.9 E) | Vertical | 10750
+38	57E NSS 12 5150 LHCP	NSS 12 (57 E) | Left | 5150
+39	78.5E THAICOM  5150H	Thaicom 5 (78.5 E) | Horizontal | 5150
+40	76.5E APSTAR 7 5150H	Apstar 7 (76.5 E) | Horizontal | 5150
+41	68.5E INT-20 11300V	Intelsat 20 (68.5 E) | Vertical | 11300
+42	68.5E INT-20  9750 H	Intelsat 20 (68.5 E) | Horizontal | 9750
+43	57E NSS 12 5150 RHCP	NSS 12 (57 E) | Right | 5150
+44	46E Azers sat 9750 V	AzerSpace 1 (46 E) | Vertical | 9750
+45	42E Turksat  9750 V	Turksat 42E (42 E) | Vertical | 9750
+46	42E Turksat  10600 V	Turksat 42E (42 E) | Vertical | 10600
+47	42E Turksat  9750 H	Turksat 42E (42 E) | Horizontal | 9750
+48	42E Turksat  10600 H	Turksat 42E (42 E) | Horizontal | 10600
+49	ABS3 3W 10600 V	ABS 3A (3 W) | Horizontal | 10600
+50	36E E36B  9750 H	Eutelsat 36B (35.9 E) | Horizontal | 9750
+51	30.5E Arab 5A 10600V	Arabsat 5C (20 E) | Vertical | 10600
+52	30.5E Arab 5A 10600H	Arabsat 5C (20 E) | Horizontal | 10600
+53	23.5E AST 3B 10600 V	Astra 3B (23.5 E) | Vertical | 10600
+54	20E Arab5C 5150 LHCP	Arabsat 5C (20 E) | Left | 5150
+55	20E Arab5C 5150 RHCP	Arabsat 5C (20 E) | Right | 5150
+56	13E HOTBIRD 9750 H	Eutelsat Hot Bird 13A&13B&13C&13D (13 E) | Horizontal | 9750
+57	13E HOTBIRD 10600 H	Eutelsat Hot Bird 13A&13B&13C&13D (13 E) | Horizontal | 10600
+58	13E HOTBIRD 9750 V	Eutelsat Hot Bird 13A&13B&13C&13D (13 E) | Vertical | 9750
+59	13E HOTBIRD 10600 V	Eutelsat Hot Bird 13A&13B&13C&13D (13 E) | Vertical | 10600
+60	100.5 AS5 11M 5150 H	AsiaSat 5 (100.5 E) | Horizontal | 5150 | 11 Meters
+61	10E E10A 10600 V	Eutelsat 10A (10 E) | Vertical | 16000
+62	E10A 10750 H new3.7M	Eutelsat 10A (10 E) | Horizontal | 10750 | 3.7 Meters
+63	9E EB9  10600 V	Eutelsat 9B (9 E) | Vertical | 10600
+64	9E EB9  10600 H	Eutelsat 9B (9 E) | Horizontal | 10600
+65	76.5E APSTAR7 5150 V	Apstar 7 (76.5 E) | Vertical | 5150
+66	4.9E ASTRA 4A 10600V	Astra 4A (4.8 E)  | Vertical | 10600
+67	4.9E ASTRA 4A 10600H	Astra 4A (4.8 E)  | Horizontal | 10600
+68	3E E3B 9750 H	Eutelsat 3B&3D (3.1 E) | Horizontal | 9750
+69	3W ABS3A 9750H	ABS 3A (3 W) | Horizontal | 9750
+70	3E E3B 10600 V	Eutelsat 3B&3D (3.1 E) | Vertical | 10600
+71	22W SES4   5150 LH	SES 4 (22 W) | Left | 5150
+72	4W Amos3 10000 H	Amos 3 (4 W) | Horizontal | 10000
+73	7W E7WA/NILE 9750 H	Nilesat 101&102&201 (7 W) / Eutelsat 7 West A (7.3 W) | Horizontal | 9750
+74	7W E7WA/NILE 10600 V	Nilesat 101&102&201 (7 W) / Eutelsat 7 West A (7.3 W) | Vertical | 10600
+75	8W E8WB 5150 LHCP	Eutelsat 8 West A&B&C (8 W) | Left | 5150
+76	8W E8WB 9750 H	Eutelsat 8 West A&B&C (8 W) | Horizontal | 9750
+77	8W E8WB 10600 V	Eutelsat 8 West A&B&C (8 W) | Vertical | 10600
+78	15W TEL 12 10000 V	Telstar 12 (15 W) | Vertical | 10000
+79	15W TEL 12 10000 H	Telstar 12 (15 W) | Horizontal | 10000
+80	15W TEL 12 10750 H	Telstar 12 (15 W) | Horizontal | 10750
+81	30W HISPSAT  9750 V	Hispasat 1C&1D&1E (30 W) | Vertical | 9750
+82	30W HISPSAT  9750 H	Hispasat 1C&1D&1E (30 W) | Horizontal | 9750
+83	7W NILESAT 10600 V	Nilesat 101&102&201 (7 W) | Vertical | 10600
+84	3E E3B 5150 R/H	Eutelsat 3B&3D (3.1 E) | Right | 5150
+85	E12W 10600H	Eutelsat 12 West B (12.5 W) | Horizontal | 10600
+86	AM44 11W 9750-H	Express AM44 (11 W) | Horizontal | 9750
+87	E93.5 INSAT-4A 5150	Insat 4B (93.5 E) | Horizontal | 5150
+88	72E INT-22 5150 RH	Intelsat 22 (72.1 E) | Right | 5150
+89	7W NILESAT 10600 H	Nilesat 101&102&201 (7 W) | Horizontal | 10600
+90	7W E7WA 9750 V	Eutelsat 7 West A (7.3 W) | Vertical | 9750
+91	7W E7WA 10600 V	Eutelsat 7 West A (7.3 W) | Vertical | 10600
+92	66E INT-17 5150 H	Intelsat 17 (66 E) | Horizontal | 5150
+93	26E BADR 10600 H	Badr 4 (26 E) | Horizontal | 10600
+94	26E BADR 9750 V	Badr 4 (26 E) | Vertical | 9750
+95	10E E10A 5150 LH	Eutelsat 10A (10 E) | Left | 5150
+96	26E BADR 10600 V	Badr 4 (26 E) | Vertical | 10600
+97	19.2E AST-1M 9750 V	Astra 1M (19.2 E) | Vertical | 9750
+98	19.2E AST-1M 10600 V	Astra 1M (19.2 E) | Vertical | 10600
+99	0.8W THOR5/6 10600 V	Thor 5&6 (0.8 W) | Horizontal | 10600
+100	7W E7WA 9750 H	Eutelsat 7 West A (7.3 W) | Horizontal | 9750
+101	7W E7WA 10600 H	Eutelsat 7 West A (7.3 W) | Horizontal | 10600
+102	4.9E Astra 4A 10750V	Astra 4A (4.8 E)  | Vertical | 10750
+103	4.9E Astra 4A 10750H	Astra 4A (4.8 E)  | Horizontal | 10750
+104	IF to L-Band 1	IF to L-Band 1
+105	5E SES 5  5150 L	SES 5 (5 E) | Left | 5150
+106	HispaSat 30W 10600 H	Hispasat 1C&1D&1E (30 W) | Horizontal | 10600
+107	13m s11 V9750	S11 | Vertical | 9750 | 13 Meters
+108	BADR 26E H9750 4m KI	Badr 4 (26 E) | Horizontal | 9750
+109	91.5E MEASAT 5150 H	Measat 3&3A (91.5 E) | Horizontal | 5150
+110	22W SES-4 9750 H	SES 4 (22 W) | Horizontal | 9750
+111	Yamal 401 90E 10000H	Yamal 401 (90.0 E) | Horizontal | 10000
+112	27.5W INT907 5150 LH	Intelsat 907 (27.5 W) | Left | 5150
+113	5E SES-5 5150 RH	SES 5 (5 E) | Right | 5150
+114	Free	
+115	al yah 52.5e 10600H	Al Yah 1 (52.5 E) | Horizontal | 10600
+116	*NOC* RF Room Out 27	*NOC* RF Room ETL Matrix Output 27
+117	*NOC* RF Room Out 28	*NOC* RF Room ETL Matrix Output 28
+118	*OU* RF Room Out 29	*OU* RF Room ETL Matrix Output 29
+119	*OU* RF Room Out 30	*OU*  RF Room ETL Matrix Output 30
+120	*OU* RF Room Out 31	*OU*  RF Room ETL Matrix Output 31
+121	*RF* RF Room Out 32	*RF* RF Room ETL Matrix Output 32
+122	NEV-15 OU 5150 H	NEV 15 OU| Horizontal | 5150
+123	NEV 15 OU 5150 V	NEV 15 OU| Vertical | 5150
+124	NEV4 10000H 4:3:8	NEV 4 | Horizontal| 10000H | 4:3:8
+125	SES12 95E 10000H S15	SES 12 (95 E) | Horizontal | 10000
+126	IN 126	IN 126	
+127	IN 127	IN 127	
+128	IN 128	IN 128
