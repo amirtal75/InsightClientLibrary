@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using NLog;
 
@@ -26,6 +26,7 @@ namespace InsightClientLibrary
         public HashSet<int>[] ElementIncomingElementIndexes { get; set; }
         /// <value>List of the graph sources</value>
         public List<GraphElement> Sources { get; set; }
+        private List<GraphElement> RouteStart { get; set; }
         /// <value>List of the graph route end elements</value>
         public List<GraphElement> RouteEnd { get; set; }
         /// <value>index in the route element array reffering to the monitoring element of the graph</value>
@@ -40,6 +41,8 @@ namespace InsightClientLibrary
         /// <value>bool value indicating a partially succesfull graph build with an invalid member</value>
         public bool ElementMemberIsNull = false;
         private bool debug = false;
+        /// <value>bool value indicating whether the uuid was modified due to illegal naming convention</value>
+        public bool modifiedUUID { get; set; }
 
         /// <summary>
         /// Constructs a graph containing raw and parsed information of the insight API result
@@ -48,11 +51,13 @@ namespace InsightClientLibrary
         /// <param name="service">the service get API result</param>
         /// <param name="_debug"> indicated whether the program should run in debug mode</param>
         /// <param name="uuid"> the name of the service to build a graph for</param>
-        public ServiceGraph(IqlApiResult root, IqlApiResult service, bool _debug, string uuid)
+        /// <param name="modifiedUUID"> indicates whether the uuid was modified due to illegal naming convention</param>
+        public ServiceGraph(IqlApiResult root, IqlApiResult service, bool _debug, string uuid, bool modifiedUUID)
         {
             debug = _debug;
             logger = NLog.LogManager.GetCurrentClassLogger();
-            this.Service = new Service(service, logger,uuid);
+            this.modifiedUUID = modifiedUUID;
+            this.Service = new Service(service.objectEntries[0], service.objectTypeAttributes, uuid);
             if (root == null || service.objectEntries == null || service.objectTypeAttributes == null)
             {
                 return;
@@ -80,7 +85,7 @@ namespace InsightClientLibrary
             }
             catch (Exception e)
             {
-                logger.Error("initialization failed " + Service.Name + "\n" + e.Message);
+                logger.Error("initialization failed " + Service.Name + "\n" + e.Message + "|" + e.StackTrace);
                 initSuccess = false;
             }
             try
@@ -91,18 +96,18 @@ namespace InsightClientLibrary
             }
             catch (Exception e)
             {
-                logger.Error("Setting Incoming elements failed " + Service.Name + "\n" + e.Message);
+                logger.Error("Setting Incoming elements failed " + Service.Name + "\n" + e.Message + "|" + e.StackTrace);
                 incominElementSuccess = false;
             }
             try
             {
                 logger.Debug("Setting sources......");
-                this.Sources = FindSources();
+                FindRouteStart();
                 logger.Debug("source setting completed");
             }
             catch (Exception e)
             {
-                logger.Error("Setting sources failed" + "\n" + e.Message);
+                logger.Error("Setting sources failed" + "\n" + e.Message + "|" + e.StackTrace);
                 soureSetSuccess = false;
             }
             try
@@ -113,42 +118,21 @@ namespace InsightClientLibrary
             }
             catch (Exception e)
             {
-                logger.Error("graph build failed" + "\n" + e.Message);
+                logger.Error("graph build failed" + "\n" + e.Message + "|" + e.StackTrace);
                 buildGraphSuccess = false;
             }
-
+            FindSources();
             this.constructorSuceeded = initSuccess && incominElementSuccess && soureSetSuccess && buildGraphSuccess;
-        }
-        /// <summary>
-        /// Creates a logger for a class
-        /// </summary>
-        /// <param name="debug"></param>
-        /// <returns></returns>
-        public NLog.Logger InitLogger(bool debug)
-        {
-            var config = new NLog.Config.LoggingConfiguration();
-
-            // Targets where to log to: File and Console
-            var logfile = new NLog.Targets.FileTarget("logfile") { FileName = @"D:\Amir\Log.txt" };
-
-            // Rules for mapping loggers to targets            
-            if (debug)
-            {
-                config.AddRule(LogLevel.Trace, LogLevel.Fatal, logfile);
-            }
-            else config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
-
-
-            // Apply config           
-            NLog.LogManager.Configuration = config;
-            NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
-            return logger;
         }
         private void InitData()
         {
             for (int i = 0; i < this.RouteElements.Count; i++)
             {
-                this.ServiceElementNameList.Add(RouteElements[i].name, i);
+                if (!this.ServiceElementNameList.ContainsKey(RouteElements[i].name))
+                {
+                    this.ServiceElementNameList.Add(RouteElements[i].name, i);
+                }
+                else logger.Error("The following element is duplicated: {0}", RouteElements[i].name);
                 if (RouteElements[i] != null && RouteElements[i].objectType != null && RouteElements[i].objectType.name.Equals("Monitoring"))
                 {
                     MonitoringElementIndex = i;
@@ -157,7 +141,11 @@ namespace InsightClientLibrary
 
             foreach (var attributeType in IqlApiResult.objectTypeAttributes)
             {
-                ObjectAttributeTypesById.Add(attributeType.id, attributeType.name);
+                if (!ObjectAttributeTypesById.ContainsKey(attributeType.id))
+                {
+                    ObjectAttributeTypesById.Add(attributeType.id, attributeType.name);
+                }
+
             }
         }
         private void FindIncomingElements()
@@ -200,24 +188,33 @@ namespace InsightClientLibrary
             }
         }
 
-        private List<GraphElement> FindSources()
+        private void FindRouteStart()
         {
-            List<GraphElement> sources = new List<GraphElement>();
-
+            this.RouteStart = new List<GraphElement>();
             for (int i = 0; i < ElementIncomingElementIndexes.Length; i++)
             {
                 if (ElementIncomingElementIndexes[i] == null)
                 {
-                    sources.Add(new GraphElement(RouteElements[i], 0, this.ObjectAttributeTypesById));
+                    this.RouteStart.Add(new GraphElement(RouteElements[i], 0, this.ObjectAttributeTypesById));
                 }
             }
+        }
 
-            return sources;
+        private void FindSources()
+        {
+            Sources = new List<GraphElement>();
+            foreach (var starter in RouteStart)
+            {
+                if (starter.IncomingElements.Count == 0 && !starter.CurrentElement.objectType.Equals("Encryption"))
+                {
+                    Sources.Add(starter);
+                }
+            }
         }
 
         private void BuildServiceGraph()
         {
-            List<GraphElement> tmp = Sources;
+            List<GraphElement> tmp = RouteStart;
             List<GraphElement> allElements = new List<GraphElement>();
             GraphElement[] array = null;
             while (tmp != null)
@@ -272,6 +269,7 @@ namespace InsightClientLibrary
                                 {
                                     next = allElements[allElements.IndexOf(next)];
                                 }
+                                else allElements.Add(next);
                                 if (!next.IncomingElements.Contains(prev))
                                 {
                                     next.AddIncomingElement(prev);
@@ -281,7 +279,10 @@ namespace InsightClientLibrary
                                 {
                                     prev.AddOutgoingElement(next);
                                 }
-                                nextLevelElements.Add(next);
+                                if (!nextLevelElements.Contains(next))
+                                {
+                                    nextLevelElements.Add(next);
+                                }
                             }
                         }
                     }
@@ -308,10 +309,10 @@ namespace InsightClientLibrary
             while (copy.Count > 0)
             {
                 max = FindMinLength(copy);
-                answer += "Printing level:\n" + max[0].graphLength;
+                answer += "Printing level:" + max[0].graphLength + "\n";
                 foreach (var item in max)
                 {
-                    answer += item.CurrentElement.name + " || ";
+                    answer += item.CurrentElement.name + " | ";
                     copy.Remove(item);
                 }
                 answer += "\n";
@@ -447,7 +448,99 @@ namespace InsightClientLibrary
                                 }
                                 break;
                         }
+                    }
+                    else
+                    {
+                        List<GraphElement> tmplst = new List<GraphElement>();
+                        if (graphElement != null && graphElement.OutgoingElements != null)
+                        {
+                            tmplst.AddRange(FindMinLength(graphElement.OutgoingElements));
+                        }
 
+                        bool found = false;
+                        foreach (var item in tmplst)
+                        {
+                            attributes = new List<ObjectAttribute>(item.CurrentElement.attributes);
+                            AttributeByIds = new Dictionary<string, int>();
+                            valueList = new Dictionary<int, List<ObjectAttributeValue>>();
+                            foreach (var attribute in attributes)
+                            {
+                                var typeId = attribute.objectTypeAttributeId;
+                                var typeName = item.ObjectAttributeTypesById[typeId];
+                                AttributeByIds.Add(typeName, typeId);
+                                valueList.Add(typeId, attribute.ObjectAttributeValues);
+                            }
+                            department = "";
+                            departmentId = AttributeByIds["Department"];
+                            valList = valueList[departmentId];
+                            if (valList.Count == 1)
+                            {
+                                department = valList[0].displayValue;
+                            }
+                            if (department.ToLower().Contains(pop.ToLower()))
+                            {
+                                switch (elementTypeName.ToLower())
+                                {
+                                    case "downlink":
+                                        lockableElements.Add(graphElement);
+                                        found = true;
+                                        break;
+                                    case "encoding":
+                                        lockableElements.Add(graphElement);
+                                        found = true;
+                                        break;
+                                    case "muxing":
+                                        lockableElements.Add(graphElement);
+                                        found = true;
+                                        break;
+                                    case "timeshift":
+                                        lockableElements.Add(graphElement);
+                                        found = true;
+                                        break;
+                                    case "mbr":
+                                        lockableElements.Add(graphElement);
+                                        found = true;
+                                        break;
+                                    case "ip to ip gateway":
+                                        lockableElements.Add(graphElement);
+                                        found = true;
+                                        break;
+                                    case "decoding":
+                                        lockableElements.Add(graphElement);
+                                        found = true;
+                                        break;
+                                    case "channel in a box":
+                                        lockableElements.Add(graphElement);
+                                        found = true;
+                                        break;
+                                    case "uplink":
+                                        lockableElements.Add(graphElement);
+                                        found = true;
+                                        break;
+                                    case "fiber video transfer":
+                                        lockableElements.Add(graphElement);
+                                        found = true;
+                                        break;
+                                    case "dvb server":
+                                        lockableElements.Add(graphElement);
+                                        found = true;
+                                        break;
+                                    default:
+                                        if (graphElement != null && graphElement.OutgoingElements != null)
+                                        {
+                                            elementsToFind.AddRange(FindMinLength(graphElement.OutgoingElements));
+                                        }
+                                        break;
+                                }
+                            }
+                        }
+                        if (!found)
+                        {
+                            if (graphElement != null && graphElement.OutgoingElements != null)
+                            {
+                                elementsToFind.AddRange(FindMinLength(graphElement.OutgoingElements));
+                            }
+                        }
                     }
                 }
             }
