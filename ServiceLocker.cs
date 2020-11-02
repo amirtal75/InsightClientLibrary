@@ -752,7 +752,12 @@ namespace InsightClientLibrary
             this.downlinkLocalOsscilator = new List<string>();
             try
             {
-                int frequency = Convert.ToInt32(downlinkFrequency);
+                int frequency = 0;
+                if (downlinkFrequency.Contains("."))
+                {
+                    frequency = (int)Convert.ToDouble(downlinkFrequency);
+                }
+                else frequency = Convert.ToInt32(downlinkFrequency);
                 if (frequency > 3050 && frequency < 4200)
                 {
                     this.downlinkLocalOsscilator.Add("5150");
@@ -1017,9 +1022,9 @@ namespace InsightClientLibrary
         protected LockableElement(string destinationIrdManagmentIp, string destinationIrdName, string destinationIrdModel, string pop, string serviceID, GraphElement source, GraphElement _lockableElement)
 
         {
-            this.destinationIrdManagmentIp = destinationIrdManagmentIp;
-            this.destinationIrdName = destinationIrdName;
-            this.destinationIrdModel = destinationIrdModel;
+            this.irdManagementIp = destinationIrdManagmentIp;
+            this.irdName = destinationIrdName;
+            this.irdModel = destinationIrdModel;
             this.pop = pop;
             this.sourceElement = source;
             this.lockableElement = _lockableElement;
@@ -1042,7 +1047,7 @@ namespace InsightClientLibrary
         /// <summary>
         /// 
         /// </summary>
-        public string destinationIrdManagmentIp { get; set; }
+        public string irdManagementIp { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -1050,9 +1055,9 @@ namespace InsightClientLibrary
         /// <summary> </summary>
         public string elementType { get; set; }
         /// <summary> </summary>
-        public string destinationIrdName { get; set; }
+        public string irdName { get; set; }
         /// <summary> </summary>
-        public string destinationIrdModel { get; set; }
+        public string irdModel { get; set; }
         /// <summary> </summary>
         public string serviceID { get; set; }
         /// <summary> </summary>
@@ -1060,11 +1065,11 @@ namespace InsightClientLibrary
         {
             return obj is LockableElement element &&
                    pop == element.pop &&
-                   destinationIrdManagmentIp == element.destinationIrdManagmentIp &&
+                   irdManagementIp == element.irdManagementIp &&
                    elementName == element.elementName &&
                    elementType == element.elementType &&
-                   destinationIrdName == element.destinationIrdName &&
-                   destinationIrdModel == element.destinationIrdModel &&
+                   irdName == element.irdName &&
+                   irdModel == element.irdModel &&
                    serviceID == element.serviceID;
         }
         /// <summary> </summary>
@@ -1072,11 +1077,11 @@ namespace InsightClientLibrary
         {
             int hashCode = 453849517;
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(pop);
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(destinationIrdManagmentIp);
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(irdManagementIp);
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(elementName);
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(elementType);
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(destinationIrdName);
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(destinationIrdModel);
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(irdName);
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(irdModel);
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(serviceID);
             return hashCode;
         }
@@ -1091,9 +1096,9 @@ namespace InsightClientLibrary
                 "Source Element Name: " + sourceElement.CurrentElement.name + "|" +
                 "Source Element Type: " + sourceElement.CurrentElement.objectType.name + "|" +
                 "POP: " + pop + "|" +
-                "Receiver Name: " + destinationIrdName + "|" +
-                "Receiver Model: " + destinationIrdModel + "|" +
-                "Receiver Managment IP: " + destinationIrdManagmentIp + "|";
+                "Receiver Name: " + irdName + "|" +
+                "Receiver Model: " + irdModel + "|" +
+                "Receiver Managment IP: " + irdManagementIp + "|";
         }
     }
 }
