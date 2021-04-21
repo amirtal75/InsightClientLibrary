@@ -1,0 +1,1662 @@
+using Skyline.DataMiner.Automation;
+using System;
+using System.Text;
+using System.IO;
+using System.Net;
+using System.Collections;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Diagnostics;
+using RestSharp;
+using RestSharp.Authenticators;
+using Excel = Microsoft.Office.Interop.Excel;
+using NLog;
+using Newtonsoft.Json;
+using InsightClientLibrary;
+using SnmpSharpNet;
+using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Firefox;
+using OpenQA.Selenium.Edge;
+using OpenQA.Selenium.IE;
+using OpenQA.Selenium.Opera;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Support.UI;
+using ExpectedConditions = SeleniumExtras.WaitHelpers.ExpectedConditions;
+
+public class Script
+{
+	public Engine engine;
+	UIResults uir = new UIResults();
+	UIBuilder uib = null;
+	NLog.Logger logger = InitLogger(true);
+    public void Run(Engine _engine){
+		engine = _engine;
+		
+		
+		
+		string uuidFile = @"C:\Skyline DataMiner\ProtocolScripts\Amir dll\services.txt";
+		string quitechInputs = @"D:\Amir\Data files\Quintech Inputs.txt";
+		// Start client instance and load the uuid file for the test.
+        string pop = "";
+        bool debug = false;
+        string polarity = "";
+		string frequency = "";
+		string modulation = "";
+		string symbolRate = "";
+		string FEC = "";
+		List<string> localosilator = new List<string>();
+		string channelName = "";
+		string receiverName = "";
+		string receiverManagment = "";
+		string receiverModel = "";
+		string rollOff = "";
+    	string multicast = "";
+		string port = "";
+		
+        logger.Debug("Simulation started at: {0}", DateTime.Now);
+        ServiceLocker serviceLocker = null;
+        string [] services = OpenFile(uuidFile);
+
+        // Default user authnetication check
+        
+
+        try
+        {
+        	int retry = 3;
+	        while (retry > 0)
+	        {
+	            try
+	            {
+	                serviceLocker = new ServiceLocker(debug, pop);
+	                
+	                if (serviceLocker.ErrorException != null)
+	                {
+	                    if (serviceLocker.ErrorException.GetType().Equals(typeof(InsightUserAthenticationException)))
+	                    {
+	                        logger.Debug(serviceLocker.ErrorException.Message + serviceLocker.ErrorException.StackTrace);
+	                    }
+	                }
+	            }
+	            catch (InsightUserAthenticationException e)
+	            {
+	                if (retry > 1)
+	                {
+	                    logger.Debug(e+ ", retrying");
+	                }
+	                else if (retry == 1)
+	                {
+	                    logger.Debug(e + ", please enter your password");
+	                }
+	            }
+	            --retry;
+	        }
+            // here need to ask user to add crdentials
+            retry = 3;
+            
+            string username = "amir.tal";
+            string password = "password$";
+            
+            // Given user authnetication check
+            while (retry > 0)
+            {
+                try
+                {
+                    serviceLocker = new ServiceLocker(debug, pop, username, password);
+					logger.Debug("service locker here");
+                    break;
+                }
+                catch (InsightUserAthenticationException e)
+                {
+                    if (retry > 1)
+                    {
+                        logger.Debug(e + ", kindly try to re enter your password");
+                    }
+                    else if (retry == 1)
+                    {
+                        logger.Debug(e + ", kindly reach out to your IT admin");
+                        return;
+                    }
+                    --retry;
+                }
+            }
+            if (!serviceLocker.ClientAuthenticated)
+            {
+                logger.Debug("Your user is no longer authenticated");
+                return;
+            }
+            
+            
+            
+            // show UI screen while "Go" button not pressed. Our screen will contain
+			// two dropdowns and a button. The first dropdown allows to select
+			// either "Cities" or "Countries", and the second dropdown will present
+			// either cities or countries as option, dependant on the selection in 
+			// the first dropdown.
+			
+			
+			
+				// need to switch receiver parameters with a UI get !!!!!!!!!!!!!!!!!
+	            string IRDName = "NOC IRD 4";
+	            string defaultQuintechInput = "*NOC* RF Room Out 27";
+	            string defaultOutputs = "NOC IRD 4;NOC Physical Spec;NOC SED Spec";
+	            
+	        	List<string> userOutputs = null;
+	        	// Change later:
+	        	userOutputs = new List<string>(defaultOutputs.Split(';'));
+	           // string uuid = "TVEINT-EHA-YES";
+	           string uuid = engine.GetScriptParam("UUID").Value;
+	            for(int i = 0; i < 1 /*services.Length*/; i++){
+	        		logger.Debug("current index: " + i);
+	        		logger.Debug("current service: " + services[i]);
+	        		//engine.GenerateInformation("Index: " + i);
+	        		//uuid = services[i];
+
+					uib = GetUib();
+					uib.RequireResponse = true;
+	        		try
+	        		{
+	        			// Dictionary<GraphElement,List<LockableElement>>.ValueCollection sourceLockElements = serviceLocker.GetSourcesLockElement(services[i], IRDManagment, IRDName, IRDModel).Values;
+						var sourceLockElements = serviceLocker.GetSourcesLockElement(uuid, "", IRDName, "").Values;     
+						engine.GenerateInformation("here insight done");
+						logger.Debug("\nGot sources\n");
+						
+						UIBlockDefinition irdSelection = new UIBlockDefinition();
+						int row = 0;
+						
+						uib.AppendBlock(GetTextBlock("Source", row, 0));
+						uib.AppendBlock(GetTextBlock("Lockable Element", row, 1));
+						uib.AppendBlock(GetTextBlock("IRD", row, 2));
+						// Source get
+
+						
+						row++;
+					
+						List<string> sourceNames = new List<string>();
+						List<string> irdNames = new List<string>();
+						List<string> lockNames = new List<string>();
+						
+						foreach (var lockElementList in sourceLockElements)
+		                {
+							var sourceElement = (lockElementList[0].sourceElement).CurrentElement;
+
+							UIBlockDefinition sourceSelection = GetSourceSelectionBlock(row);
+							UIBlockDefinition leSelection = GetLockeElementSelectionBlock(row, sourceElement.name, lockElementList);
+							
+							sourceSelection.AddDropDownOption(sourceElement.name, "Type: " + sourceElement.objectType.name + ", Name: " + sourceElement.name);
+							uib.AppendBlock(sourceSelection);
+							uib.AppendBlock(leSelection);
+							uib.AppendBlock(GetIrdSelectionBlock(row));
+							row++;
+						}
+
+						
+						
+						UIBlockDefinition blockButton = new UIBlockDefinition();
+						blockButton.Type = UIBlockType.Button;
+						blockButton.Text = "Go";
+						blockButton.DestVar = "go_button";
+						blockButton.Row = row;
+						blockButton.Column = 0;
+						
+						uib.AppendBlock(blockButton);
+						uir = engine.ShowUI(uib);
+						
+						engine.GenerateInformation("here button done");
+						Dictionary<string, string> chosenSourceToChosenLockElement = new Dictionary<string, string>();
+						Dictionary<string, string> chosenLockElementToChosenIRD = new Dictionary<string, string>();
+						
+						engine.GenerateInformation(uir.GetString("source0"));
+						engine.GenerateInformation(uir.GetString("chosenIRD0"));
+						engine.GenerateInformation(uir.GetString("lockElement0"));
+
+						for(int rowindex = 1; rowindex < row; rowindex++)
+						{	
+							string s = uir.GetString("source" + rowindex);
+							string irdd = uir.GetString("chosenIRD" + rowindex);
+							string leName = uir.GetString("lockElement" + rowindex);
+							
+							sourceNames.Add(s);
+							irdNames.Add(irdd);
+							lockNames.Add(leName);	
+							
+							chosenSourceToChosenLockElement.Add(s,leName);							
+							chosenLockElementToChosenIRD.Add(leName,irdd);
+						}
+						row++;
+						
+						for(int listIndex = 0; listIndex < irdNames.Count;  listIndex++)
+						{
+							//engine.GenerateInformation("Chosen Source: " + sourceNames[i] + " , Chosen IRD: " + irdNames[i]);
+							//engine.GenerateInformation(uir.GetString("chosenIRD0"));
+							//engine.GenerateInformation(uir.GetString("chosenIRD1"));
+						}
+						
+	        			foreach (var lockElementList in sourceLockElements)
+		                {	
+	        				
+	        				foreach (var lockElement in lockElementList)
+		                    {
+	        					engine.GenerateInformation("in loop");
+	        					
+	        					string sourceName = lockElement.sourceElement.CurrentElement.name;
+	        					
+	        					string lockElementChosen = chosenSourceToChosenLockElement[sourceName];
+	        					
+	        					if(lockElement.elementName.Equals(lockElementChosen))
+        						{
+	        						IRDName = chosenLockElementToChosenIRD[lockElementChosen];
+		        					logger.Debug("Loop for source: " + lockElement.sourceElement);
+		        					polarity = "";
+									frequency = "";
+									modulation = "";
+									symbolRate = "";
+									FEC = "";
+									channelName = "";
+									rollOff = "";
+							    	multicast = "";
+									port = "";
+									Receiver receiver = null;
+									engine.GenerateInformation(IRDName);
+									receiverModel = engine.FindElementsByName(IRDName)[0].ProtocolName;
+									receiverManagment = engine.FindElementsByName(IRDName)[0].PollingIP;
+		        					logger.Debug("Lockable Type: " + lockElement.GetType().ToString());
+		        					bool rfCond = lockElement.GetType() == typeof(RFLockableElement);
+		        					logger.Debug("typeConditionRF: " + rfCond.ToString());
+		        					if(lockElement.GetType() == typeof(RFLockableElement) || lockElement.GetType() == typeof(MultiLockableElement))
+									{
+		        						
+			        					var multi = (RFLockableElement)lockElement;
+			        					
+			        					logger.Debug("Found RFLockableElement");
+			        					logger.Debug(lockElement.lockableElement.CurrentElement.name);
+			        					
+			        					polarity = multi.downlinkPolarity;
+										frequency = multi.downlinkFrequency;
+										modulation = multi.modulation;
+										symbolRate = multi.downlinkSymbolRate;
+										FEC = multi.downlinkFEC;
+										localosilator = multi.downlinkLocalOsscilator;
+										receiverName = IRDName;
+										rollOff = multi.downlinkRollOff;
+										
+			        					// First we check for valid RF information
+			        					if(!multi.downlinkSatellite.Equals("") && !multi.downlinkPolarity.Equals("") &&
+										   multi.downlinkLocalOsscilator != null && multi.downlinkLocalOsscilator.Count > 0 && !frequency.Equals(""))
+										{
+											logger.Debug("Found valid RF information");
+											logger.Debug("First we want to try and find the RF in etl Matrix, by two steps:");
+											
+											logger.Debug("Step 1 - Gather all existing inputs from the ETL matrix");
+											List<string> inputList_ETL = getETLInputs();									
+											logger.Debug("Step 2 - we try to find the required RF for the lockable element in ETL matrix");
+											if(inputList_ETL.Count == 1)
+											{
+												logger.Debug("Step 2 - cannot be completed as the matrix was not found/not active");
+												logger.Debug(inputList_ETL[0]);
+											}
+											else
+											{
+												string inputFromEtl = inputSearch(multi.downlinkSatellite, multi.downlinkPolarity, multi.downlinkLocalOsscilator, inputList_ETL);
+												logger.Debug("inputFromEtl" + inputFromEtl);
+												logger.Debug("Step 2 - seraching for the input in the ETL matrix returned: " + inputFromEtl);
+												
+												// if the returned string is not empty then we found the requisite RF in the ETl matrix and therefore we will lock it
+												
+								                string lockType = "RF";										
+												if(!inputFromEtl.Equals(""))
+												{
+													var values = inputFromEtl.Split(new string[] { " | " }, StringSplitOptions.None);
+								                	var inputListOsscilator = values[2];
+													// First we lock the parameters in the ETL Matrix
+													logger.Debug("ETL Matrix Lock");
+													ETLMatrixLock(inputList_ETL.IndexOf(inputFromEtl) + 1);
+													// Then we will make a cross point between the ETL matrix output 27, to the NOC outputs in Quintech Matrix
+													port = "";
+		    										// lock IRD parameters
+		    										logger.Debug("IRD Lock");
+		    										receiver = LockInIrd(receiverModel, receiverName,receiverManagment, lockType, 
+																                      multicast, port , multi.serviceID, polarity, modulation, 
+																					  frequency, inputListOsscilator, symbolRate , FEC , rollOff);
+		    										
+		    										logger.Debug("Quintech Matrix Lock");
+		    										QuintechLock(defaultQuintechInput, userOutputs);
+		    										/*
+		    										var subscript = engine.PrepareSubScript("QuintechSeleniumLock");
+													subscript.SelectScriptParam("InputName", defaultQuintechInput);
+													subscript.SelectScriptParam("OutputNames", defaultOutputs);
+													// launch the script
+													subscript.StartScript();*/
+													
+												}
+												// we need to search if there is a valid input in the quintech matrix
+												else
+												{
+													List<string> lines = new List<string>(OpenFile(quitechInputs));
+													Dictionary<string, string> FullNameTonickName = new Dictionary<string, string>();
+													List<string> inputList_Quintech = new List<string>();
+													foreach(var line in lines){
+											        	var members = line.Split('\t');
+											        	//logger.Debug(members[1]);
+											        	if(members.Length > 3 && !FullNameTonickName.ContainsKey(members[2]) )
+										        		{
+											        		
+											        		inputList_Quintech.Add(members[2]);
+											        		FullNameTonickName.Add(members[2],members[1]);
+										        		}
+											    	}
+													
+													string inputFromQuintech = inputSearch(multi.downlinkSatellite, multi.downlinkPolarity, multi.downlinkLocalOsscilator, inputList_Quintech);
+													logger.Debug("inputFromQuintech:" + inputFromQuintech);
+													if(!inputFromQuintech.Equals(""))
+													{
+														var values = inputFromQuintech.Split(new string[] { " | " }, StringSplitOptions.None);
+								                		var inputListOsscilator = values[2];
+														// lock IRD parameters
+		    											logger.Debug("IRD Lock");
+														receiver = LockInIrd(receiverModel, receiverName,receiverManagment, lockType, 
+																                      multicast, port, multi.serviceID, polarity, modulation, 
+																					  frequency, inputListOsscilator, symbolRate , FEC , rollOff);
+		    											
+		    											// First we lock the parameters in the Quintech Matrix
+														logger.Debug("Quintech Matrix Lock");
+														QuintechLock(inputFromQuintech, userOutputs);
+														
+														
+		
+													}
+												}
+												engine.GenerateInformation("ROW: " +row);
+												uib.RequireResponse = false;
+												// in both cases we performed a lock for the IRD and matrix, now we check for the actual lock for 20 seconds
+												uib.AppendBlock(GetTextBlock("Trying to lock the IRD: ", row, 0));
+												uir = engine.ShowUI(uib);
+												row++;
+												
+												
+												
+												engine.GenerateInformation("before rtry: " +row);
+												int retries = 0;
+												while(retries < 200 && !receiver.HasRfLock())
+												{
+													
+													logger.Debug("RF lock Retry Loop, Attempt: " + retries);
+												
+													Thread.Sleep(100);
+													retries++;
+												}
+												
+												if(receiver.HasRfLock())
+													{
+														logger.Debug("We have lock after attempt: " + retries);
+														logger.Debug("Locking the service ID: " + multi.serviceID);
+														
+														uib.AppendBlock(GetTextBlock("We have lock after attempt: " + retries, row, 0));
+														uir = engine.ShowUI(uib);
+														row++;
+														
+														if(multi.serviceID.Equals(""))
+														{
+															// add user alert to manually lock the service or give a serviec ID
+															logger.Debug("service ID not updated in database, provide the service ID or manually choose the service.");
+															
+															var serviceDict = ReceiverCiscoD9854.getChannelListBypassDM(receiver.managmentIP,  "public", logger);
+															List<string> irdServices = new List<string> (serviceDict.Values);
+															List<string> servicePids = new List<string> (serviceDict.Keys);
+															uib.AppendBlock(GetTextBlock("service ID not updated in database, Please provide the service ID or manually choose the service.", row, 0));
+															
+															UIBlockDefinition serviceSelection = new UIBlockDefinition();
+															serviceSelection.Type = UIBlockType.DropDown;
+															string val = "";
+															
+															for(int pidIndex = 0; pidIndex < irdServices.Count;pidIndex++)
+															{
+																serviceSelection.AddDropDownOption(servicePids[pidIndex], servicePids[pidIndex] + ":" + irdServices[pidIndex]);
+															}
+															foreach(var serv in irdServices)
+															{
+																
+															}
+															serviceSelection.InitialValue = "";
+															serviceSelection.DestVar = "serviceSelection";
+															serviceSelection.WantsOnChange = false;
+															serviceSelection.DisplayFilter = true;
+															serviceSelection.Row = row;
+															serviceSelection.Column = 0;
+															serviceSelection.Width = 300;
+															serviceSelection.Height = 20;
+															row++;
+															
+															uib.AppendBlock(serviceSelection);
+															row++;
+															
+															blockButton.Row = row;
+															blockButton.Text = "Set Service";
+															row++;
+															
+															uib.RequireResponse = true;
+															uir = engine.ShowUI(uib);
+															
+
+															
+															multi.serviceID = uir.GetString("serviceSelection").Split(':')[0];
+															engine.GenerateInformation("PID number received from user: " + uir.GetString("serviceSelection"));
+															engine.GenerateInformation("PID number received from user: " + uir.GetString("serviceSelection").Split(':').Length);
+															engine.GenerateInformation("PID number received from user: " + multi.serviceID);
+															Thread.Sleep(20000);
+															logger.Debug("service ID found, setting......");
+															uib.RequireResponse = false;
+															receiver.SetServiceID(multi.serviceID);
+														}
+														else 
+														{
+															// after the IRD is locked, about 20 secoinds wait is neccesary for the service list to update
+															Thread.Sleep(20000);
+															logger.Debug("service ID found, setting......");
+															receiver.SetServiceID(multi.serviceID);
+														}
+													}
+												else
+												{
+													logger.Debug("IRD Lock Has Failed, Please try manually: ");
+													uib.AppendBlock(GetTextBlock(" IRD Lock Has Failed, Please try manually: ", row, 0));
+													uir = engine.ShowUI(uib);
+													row++;
+												}
+											}
+										}
+			        					// Since there is no valid RF information, we will now check fo a valid multicast information
+			        					else if(lockElement.GetType() == typeof(MultiLockableElement))
+										{
+			        						var multi2 = new MultiLockableElement((IPLockableElement)lockElement, receiverManagment, receiverName, receiverModel, "", "",
+																				lockElement.sourceElement, lockElement.lockableElement);   
+			        						if((!multi2.multicastMain.Equals("") || !multi2.multicastBackup.Equals("")))
+				        					{
+			        							
+			        							string lockType = "IP";
+			        							port = "2000";
+			        							logger.Debug("Found multilockable, locking IP");
+												receiver = LockInIrd("", IRDName,"", lockType, multi2.multicastMain, multi2.port, "", "", "", "", "", "" , "" , "");
+												Thread.Sleep(20000);
+												receiver.SetServiceID(multi.serviceID);
+											}
+										}
+			        					
+			    					}
+			        				else if(lockElement.GetType() == typeof(IPLockableElement))
+			                    	{
+			                        	var multi2 = (IPLockableElement)lockElement;        					                                    
+		        						if(!multi2.multicastMain.Equals("") || !multi2.multicastBackup.Equals(""))
+			        					{
+		        							logger.Debug("Found IPLockableElement");
+											string lockType = "IP";
+		        							port = "2000";
+		        							logger.Debug("Found IPlockable, locking IP");
+											receiver = LockInIrd("", IRDName,"", lockType, multi2.multicastMain, multi2.port, "", "", "", "", "", "" , "" , "");
+											//Thread.Sleep(20000);
+											logger.Debug("receiver: " + (receiver == null).ToString());
+											receiver.SetServiceID(multi2.serviceID);
+										}
+			                    	}
+        						}
+	        					
+	    					}
+	    				}
+					File.Delete("D:\\Amir\\Log.txt");
+	        		}
+	        		catch (IllegalNameException e)
+	                {
+	                    logger.Error(e.Message);
+	                    logger.Debug(e.Message);
+	                }
+	                catch (InsighClientLibraryUnknownErrorException e)
+	                {
+	                    logger.Error(e.Message);
+	                    logger.Debug(e.Message);
+	                }
+	                catch (CorruptedInsightDataException e)
+	                {
+	                    logger.Error(e.Message);
+	                    logger.Debug(e.Message);
+	                }
+	                catch (RestSharpException e)
+	                {
+	                    logger.Error(e.Message);
+	                    logger.Debug(e.Message); ;
+	                }
+	                catch (UnsuccessfullResponseException e)
+	                {
+	                    logger.Error(e.Message);
+	                    logger.Debug(e.Message);
+	                }
+	                catch (Exception e)
+	                {
+	                    logger.Error(e.Message);
+	                    logger.Error(e.StackTrace);
+	                    logger.Debug("Program failed due to an unknown error, the programmer was informed");
+	                    // add mail
+	                }
+	    		
+	            }
+	        
+						
+
+			
+			// ------------------------------ SCREEN 2 ----------------------------------------------
+			
+
+			UIBuilder uib2 = new UIBuilder();
+			uib2.RequireResponse = true;
+			uib2.Append("You selected " + "");
+			uib2.AppendButton("ok", "OK");
+			//uir = engine.ShowUI(uib2);
+			
+            
+        }
+        catch (Exception e)
+        {
+            logger.Error(e.Message);
+            logger.Error(e.StackTrace);
+            logger.Debug("Program failed due to an unknown error, the programmer was informed");
+            // add mail
+        }
+    }
+	
+	public UIBuilder GetUib()
+	{
+		UIBuilder uib = new UIBuilder();
+		uib.RequireResponse = true;
+		
+		// optional dimensions
+		uib.Width = 1200;
+		uib.Height = 900;
+		uib.MinWidth = 400;
+		uib.MinHeight = 300;
+		uib.MaxWidth = 1200;
+		uib.MaxHeight = 900;
+		uib.ColumnDefs = "300;300;300;180;180;180;180;180";
+		uib.RowDefs = "30;30;30;30;30;30;30;30;30";
+		
+		return uib;
+	}
+	public UIBlockDefinition GetTextBlock(string text, int row, int coloumn)
+	{
+		UIBlockDefinition alarmText = new UIBlockDefinition();
+		alarmText.Type = UIBlockType.StaticText;
+		alarmText.Text = text;
+		alarmText.Column = coloumn;
+		alarmText.Row = row;
+		return alarmText;	
+	}
+	
+	public UIBlockDefinition GetSourceSelectionBlock(int row)
+	{
+		
+		UIBlockDefinition blockSelectionType = new UIBlockDefinition();
+		blockSelectionType.Type = UIBlockType.DropDown;
+		blockSelectionType.InitialValue = "";
+		blockSelectionType.DestVar = "source" + row;
+		blockSelectionType.WantsOnChange = false;
+		blockSelectionType.DisplayFilter = true;
+		blockSelectionType.Row = row;
+		blockSelectionType.Column = 0;
+		blockSelectionType.Width = 300;
+		blockSelectionType.Height = 20;
+		
+		return blockSelectionType;
+	}
+	
+	public UIBlockDefinition GetIrdSelectionBlock(int row)
+	{
+		UIBlockDefinition irdSelection = new UIBlockDefinition();
+		irdSelection.Type = UIBlockType.DropDown;
+		irdSelection.AddDropDownOption("NOC IRD 1", "NOC IRD 1");
+		irdSelection.AddDropDownOption("NOC IRD 2", "NOC IRD 2");
+		irdSelection.AddDropDownOption("NOC IRD 3", "NOC IRD 3");
+		irdSelection.AddDropDownOption("NOC IRD 4", "NOC IRD 4");
+		irdSelection.InitialValue = "NOC IRD 4";
+		irdSelection.DestVar = "chosenIRD" + row;
+		irdSelection.WantsOnChange = false;
+		irdSelection.DisplayFilter = true;
+		irdSelection.Row = row;
+		irdSelection.Column = 2;
+		irdSelection.Width = 180;
+		irdSelection.Height = 20;
+		
+		return irdSelection;
+	}
+	
+	public UIBlockDefinition GetLockeElementSelectionBlock(int row, string sourceName, List<LockableElement> lockElementList)
+	{
+		UIBlockDefinition leSelection = new UIBlockDefinition();
+		leSelection.Type = UIBlockType.DropDown;
+		string val = "";
+		foreach(var le in lockElementList)
+		{
+			val = "Type: " + le.elementType + ", Name: " + le.elementName;
+			leSelection.AddDropDownOption(le.elementName, val);
+		}
+		leSelection.InitialValue = "";
+		if(lockElementList.Count == 1)
+			leSelection.InitialValue = val;
+		leSelection.DestVar = "lockElement" + row;
+		leSelection.WantsOnChange = false;
+		leSelection.DisplayFilter = true;
+		leSelection.Row = row;
+		leSelection.Column = 1;
+		leSelection.Width = 300;
+		leSelection.Height = 20;
+		
+		return leSelection;
+	}
+	
+	
+    /// <summary>
+    /// Creates a logger for a class
+    /// </summary>
+    /// <param name="debug"></param>
+    /// <param name="className"></param>
+    /// <returns></returns>
+    public static NLog.Logger InitLogger(bool debug)
+    {
+	    var config = new NLog.Config.LoggingConfiguration();
+	    string folder = "D:\\Amir\\";
+		var x = DateTime.Now.ToString().Replace('_', ':');
+        var y = x.Replace('/', '.');
+        string filename = "Log.txt";
+	    // Targets where to log to: File and Console
+	    var logfile = new NLog.Targets.FileTarget("logfile") { FileName = folder+filename };
+	
+	    // Rules for mapping loggers to targets            
+	    if (debug)
+	    {
+	        config.AddRule(NLog.LogLevel.Debug, NLog.LogLevel.Fatal, logfile);
+	    }
+	    else config.AddRule(NLog.LogLevel.Fatal, NLog.LogLevel.Fatal, logfile);
+	
+	    //NLog.LogManager.Setup().SetupInternalLogger(s =>
+	                    //s.SetMinimumLogLevel(LogLevel.Trace).LogToFile(@"D:\Amir\Hello.txt"));
+	    // Apply config           
+	    NLog.LogManager.Configuration = config;
+	    return NLog.LogManager.GetCurrentClassLogger();
+    }
+
+    public string inputSearch(string satellite, string polarity, List<string> localosilators, List<string> inputs)
+    {
+        string inputFound = "";
+
+        satellite = satellite.Trim();
+        var originalSattelite = satellite;
+
+        int indexOfParentasis = satellite.LastIndexOf('(');
+        var position = satellite.Substring(indexOfParentasis);
+        satellite = satellite.Substring(0, indexOfParentasis - 1);
+
+        bool satteliteNameMatch = true;
+        bool foundInput = false;
+        
+        logger.Debug("satellite: " + satellite);
+        logger.Debug("polarity: " + polarity);
+        foreach(var lname in localosilators)
+    	{
+        	logger.Debug("osscilator: " + lname);
+    	}
+        foreach(var lname in localosilators)
+    	{
+        	logger.Debug("inputs: " + lname);
+    	}
+        
+        bool debug = true;
+        
+        for (int i = 0; i < inputs.Count && !foundInput; i++)
+        {
+            logger.Debug("Matrix Index: " + i);
+
+            var values = inputs[i].Split(new string[] { " | " }, StringSplitOptions.None);
+            
+            foreach (var val in values)
+        	{
+            	logger.Debug("value: " + val);
+        	} 
+            
+            if (values.Length >= 3)
+            {
+                var inputListSattelite = values[0].Trim();
+                var inputListOsscilator = values[2];
+                var inputListPolarity = values[1];
+                string[] listOfSatteliteStrings = null;
+
+                if (inputListSattelite.Contains(" *sat* "))
+                {
+                    listOfSatteliteStrings = inputListSattelite.Split(new string[] { " *sat* " }, StringSplitOptions.None);
+                }
+                else
+            	{
+                	listOfSatteliteStrings = new string[] { inputListSattelite };
+            	}
+
+                foreach (var inputSatteliteString in listOfSatteliteStrings)
+                {
+                    if (inputSatteliteString.Contains("("))
+                    {
+                        indexOfParentasis = inputSatteliteString.LastIndexOf('(');
+                        var inputListposition = inputSatteliteString.Substring(indexOfParentasis);
+                        var sattelitePart = inputSatteliteString.Substring(0, indexOfParentasis - 1);
+						logger.Debug("inputListposition: " + inputListposition);
+						logger.Debug("inputListSattelite: " + sattelitePart);
+
+                        if (!inputSatteliteString.Contains(" & "))
+                        {
+                            satteliteNameMatch = satellite.Equals(sattelitePart);
+                        }
+                        else
+                        {
+                            if (position.Equals(inputListposition))
+                            {
+                            	logger.Debug("in position comaprison");
+                            	             
+                                List<string> satelliteArray = new List<string>();
+                                satelliteArray.AddRange(sattelitePart.Split(new String[] {" & "},StringSplitOptions.None));
+                                satelliteArray[satelliteArray.Count - 1] = satelliteArray[satelliteArray.Count - 1].Split(new string[] { " (" }, StringSplitOptions.None)[0];
+                                var satelliteSplit = satelliteArray[0].Split(' ');
+                                var length = satelliteArray[0].Length - satelliteSplit[satelliteSplit.Length - 1].Length;
+                                var satteliteInitial = satelliteArray[0].Substring(0, length);
+                                
+                                satteliteNameMatch = satellite.Equals(satelliteArray[0]);
+
+                                for (int j = 1; j < satelliteArray.Count; j++)
+                                {
+                                	logger.Debug(" & split result: " + satteliteInitial + satelliteArray[j]) ;
+                                    bool sec = satellite.Equals(satteliteInitial + satelliteArray[j]);
+                                    satteliteNameMatch = satteliteNameMatch || sec;
+                                    
+                                }
+                            }
+                        }
+                        
+                        bool osscilatorEquality = false;
+                        if(inputListOsscilator.Contains(" *pol* "))
+                    	{
+                        	var osscList = inputListOsscilator.Split(new string[] { " *pol* " }, StringSplitOptions.None);
+                        	foreach(var ossc in osscList)
+                    		{
+                        		osscilatorEquality = osscilatorEquality || localosilators.Contains(ossc);
+                    		}
+                    	}
+                        else osscilatorEquality = localosilators.Contains(inputListOsscilator);
+                        
+                        bool polarityEquality = polarity.Equals(inputListPolarity);
+                        
+                        logger.Debug("osscilatorEquality: " + osscilatorEquality.ToString());
+                        logger.Debug("polarityEquality: " + polarityEquality.ToString());
+                        logger.Debug("satteliteNameMatch: " + satteliteNameMatch.ToString());
+                        
+                        if ( osscilatorEquality && polarityEquality && satteliteNameMatch)
+                        {
+                            return inputs[i];
+                        }
+                    }
+                    else
+                    {
+                        // in the future, if we know the left and right limit of a mobile dish we would be able to extend the code.
+                    }
+                }
+                
+            }
+        }
+
+        return inputFound;
+    }   
+    public void QuintechLock(string inputName, List<string> outputNames)
+    {
+    	logger.Debug("In Quintech Lock");
+    	
+		var startTime = DateTime.Now;
+        logger.Debug("Starting log for the Quinteck lock script at: " + DateTime.Now);
+		logger.Debug("input is: " + inputName);
+        foreach (var item in outputNames)
+        {
+            logger.Debug("Chosen matrix output: " + item);
+
+        }
+        try
+        {
+            using (var driver = new ChromeDriver())
+            {
+                driver.Navigate().GoToUrl("https://172.19.19.30/?GetScreen=login");
+                SecurityBypass(driver);
+                Login(driver);
+                driver.Navigate().GoToUrl("https://172.19.19.30/?GetScreen=crosspoints");
+                
+                int tries = 10;
+                Thread.Sleep(1000);
+                while (BugCheck(driver))
+                {
+                    Login(driver);
+                    driver.Navigate().GoToUrl("https://172.19.19.30/?GetScreen=crosspoints");
+                    if (tries == 0)
+                    {
+                        throw new Exception("Maximum bug fix retries was reached");
+                    }
+                    tries--;
+                }
+                logger.Debug("input url found " + driver.Url);
+                PressOnInput(driver,inputName);
+                PressOnOutputs(driver, outputNames);
+                SaveCrossPoints(driver);
+				Thread.Sleep(2000);
+                logger.Debug("Run duration: " + (DateTime.Now - startTime));
+            }
+        }
+        catch (WebDriverException e)
+        {
+            logger.Debug(e.Message);
+            logger.Debug(e.StackTrace);
+            throw e;
+        }
+        catch (Exception e)
+        {
+            logger.Debug(e.Message);
+            logger.Debug(e.StackTrace);
+            throw e;
+        }	
+	}
+    
+    public  void SaveCrossPoints(IWebDriver driver)
+    {
+        string elementName = "SaveCrossPoints Function:";
+        logger.Debug(elementName);
+
+        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(3));
+        logger.Debug("Saving crosspoints");
+        wait.Until(ExpectedConditions.ElementExists(By.LinkText("Save"))).Click();
+    }
+    public  void PressOnOutputs(IWebDriver driver, List<string> outputNames)
+    {
+        string outputName = "";
+        string outputXPath = "";
+        string parentXPath = "";
+        string xPath_outputNumber = "";
+
+        for (int i = 0; i < outputNames.Count; i++)
+        {
+            outputName = outputNames[i];
+            outputXPath = "//td[contains(.,'" + outputName + "')]";
+            parentXPath = outputXPath + "/parent::node()";
+            xPath_outputNumber = parentXPath + "/*[2]";
+            logger.Debug("Bug check from output press");
+            BugCheck(driver);
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(3));
+            var outputElement = wait.Until(ExpectedConditions.ElementExists(By.XPath(outputXPath)));
+
+            var parentElement = driver.FindElement(By.XPath(parentXPath));
+
+            string className = parentElement.GetAttribute("class");
+            logger.Debug(outputName + " className: " + className);
+            
+            bool isChecked = className.Equals("checkable checked");
+            logger.Debug("Element {0} select status: " + isChecked, outputName);
+            if (!isChecked)
+            {
+                outputElement.Click();
+                Thread.Sleep(1000);
+                isChecked = parentElement.GetAttribute("class").Equals("checkable checked");
+                logger.Debug(outputName + " after click state is: " + parentElement.GetAttribute("class"));
+            }
+        }
+    }
+    public  int PressOnInput(IWebDriver driver, string inputName)
+    {
+        string elementName = "PressOnInput Function";
+        logger.Debug(elementName);
+
+        string inputXPath = "//td[contains(.,'" + inputName + "')]";
+        string parentXPath = inputXPath + "/parent::node()";
+        string xPath_inputNumber = parentXPath + "/*[1]";
+        string inputNumber = "";
+
+        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
+        wait.Until(ExpectedConditions.ElementExists(By.XPath(inputXPath))).Click();
+        logger.Debug("After click");
+        inputNumber = driver.FindElement(By.XPath(xPath_inputNumber)).GetAttribute("innerHTML");
+
+        logger.Debug("Wait for output page to load by waiting on the last output in the output table");
+        try
+        {
+            logger.Debug("Trying wait with 4 seconds");
+            wait = new WebDriverWait(driver, TimeSpan.FromSeconds(4));
+            wait.Until(ExpectedConditions.ElementExists(By.Id("Output127")));
+        }
+        catch (Exception e)
+        {
+            logger.Debug("Bug check from input press");
+            BugCheck(driver);
+        }
+        logger.Debug("returning from input press");
+        return Int32.Parse(inputNumber);
+    }
+    public  bool BugCheck(IWebDriver driver)
+    {
+        string elementName = "BugCheck Function";
+        logger.Debug(elementName);
+        Thread.Sleep(3000);
+        var x = "";
+        try
+        {
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(3));
+            logger.Debug("Searching login element");
+            x = wait.Until(ExpectedConditions.ElementExists(By.XPath("//input[@name='login']"))).TagName;
+            logger.Debug("login element found - bug occrured");
+            return true;
+        }
+        catch (WebDriverException e)
+        {
+            logger.Debug("Bug not occured ,{0} found ",x);
+            logger.Debug("Bug not occured ,{0} found ", driver.Url);
+            return false;
+        }
+
+    }
+    public  void Login(IWebDriver driver)
+    {
+        string elementName = "Login Function";
+        logger.Debug(elementName);
+        SendUser(driver);
+        SendPassword(driver);
+
+        logger.Debug("Clicking login");
+        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(3));            
+        wait.Until(ExpectedConditions.ElementExists(By.XPath("//input[@name='login']"))).Click();
+
+        try
+        {
+            logger.Debug("Waiting for page to load by waiting on crosspoints element dor 3 seconds");
+            wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
+            wait.Until(ExpectedConditions.ElementExists(By.LinkText("Crosspoints")));
+        }
+        catch (WebDriverException e)
+        {
+            logger.Debug("Page did not load, waiting for bug check");
+        }
+
+    }
+    public  void SendPassword(IWebDriver driver)
+    {
+        string elementName = "SendPassword Function:";
+        logger.Debug(elementName);
+
+        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(3));
+        logger.Debug("Sending password keys");
+        wait.Until(ExpectedConditions.ElementExists(By.Id("password"))).SendKeys("mcr");
+    }
+    public  void SendUser(IWebDriver driver)
+    {
+        string elementName = "SendUser Function:";
+        logger.Debug(elementName);
+
+        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(3));
+        logger.Debug("Sending user keys");
+        wait.Until(ExpectedConditions.ElementExists(By.Id("username"))).SendKeys("mcr");
+    }
+    public  void SecurityBypass(IWebDriver driver)
+    {
+        string elementName = "SecurityBypass Function";
+        logger.Debug(elementName);
+        try
+        {
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(3));
+            logger.Debug("Clicking advanced button");
+            wait.Until(ExpectedConditions.ElementExists(By.Id("details-button"))).Click();
+            logger.Debug("Clicking proceed button");
+            wait.Until(ExpectedConditions.ElementExists(By.Id("proceed-link"))).Click();
+            logger.Debug("Ovverided Security Page");
+        }
+        catch (WebDriverException)
+        {
+            logger.Debug("No security screen encountered");
+        }
+    }
+    public void ETLMatrixLock(int inputIndex)
+    {
+		string switchValue = "";    	
+    	logger.Debug("In ETL Matrix Lock");
+    	
+    	Element[] list = engine.FindElementsByProtocol("Internal-ETL-Nigma", "production");;
+		Element matrix = null;
+		for(int i = 0; i < list.Length; i++){
+			if(list[i].PollingIP.Equals("172.19.10.16")){
+				matrix = list[i];
+				i = list.Length;
+			}
+		}
+		if(matrix == null){
+			return;
+		}
+			
+		if(!matrix.IsActive){
+			logger.Error("Matrix not active");
+			return;
+		}
+		
+		if(inputIndex < 10){
+			switchValue = "027" + "00" + inputIndex;
+		}else if (inputIndex < 100){
+			switchValue = "027" + "0" + inputIndex;
+			}
+		else switchValue = "027" + inputIndex;	
+		logger.Debug("switchValue: " + switchValue + "\n");
+		matrix.SetParameter("Switch", switchValue);
+		//Thread.Sleep(1000);
+		
+		// change to equal to get parameter
+		return;
+	}
+    
+	public List<string> getETLInputs()
+	{
+		logger.Debug("In ETL Function");
+		int numberOfInputs = 128;
+		var answer = new List<string>();
+		
+		Element[] list = engine.FindElementsByProtocol("Internal-ETL-Nigma", "production");;
+		Element matrix = null;
+		for(int i = 0; i < list.Length; i++){
+			if(list[i].PollingIP.Equals("172.19.10.16")){
+				matrix = list[i];
+				i = list.Length;
+			}
+		}
+		if(matrix == null){
+			return null;
+		}
+			
+		if(!matrix.IsActive){
+			logger.Error("Matrix not active");
+			answer.Add("Matrix not active");
+			return answer;
+		}
+		
+		string inputSearchResult = "";
+		string inputName = "";
+		for(int inputIndex = 1; inputIndex <= numberOfInputs; inputIndex++)
+		{
+			inputName = "Input " + inputIndex;
+			//logger.Debug("index: " + inputIndex + "\n");
+			
+			inputSearchResult = (string)matrix.GetParameterDisplayByPrimaryKey("Input Description", inputName);
+			//logger.Debug("Current Index RF: " + inputSearchResult);
+			answer.Add(inputSearchResult);
+			
+			
+		}
+		return answer;
+	}
+	public string[] OpenFile(string filePath){
+        StreamReader sr = new StreamReader(filePath); 
+        return sr.ReadToEnd().Split('\n');
+    }
+	
+	public Receiver LockInIrd(string receiverModel, string receiverName,string receiverManagment, string lockType, 
+	                      string multicast, string port, string serviceID, string polarity, string modulation, 
+						  string frequency, string localosilator, string symbolRate , string FEC , string rollOff)
+	{
+		logger.Debug("");
+		logger.Debug("IRD LOCK PARAMETERS:");
+		logger.Debug("receiverModel: " + receiverModel);
+		logger.Debug("receiverName: " + receiverName);
+		logger.Debug("receiverManagment: " + receiverManagment);
+		logger.Debug("lockType: " + lockType);
+		logger.Debug("multicast: " + multicast);
+		logger.Debug("port: " + port);
+		logger.Debug("serviceID: " + serviceID);
+		logger.Debug("polarity: " + polarity);
+		logger.Debug("modulation: " + modulation);
+		logger.Debug("frequency: " + frequency);
+		logger.Debug("localosilator: " + localosilator);
+		logger.Debug("symbolRate: " + symbolRate);
+		logger.Debug("FEC: " + FEC);
+		logger.Debug("rollOff: " + rollOff);
+		logger.Debug("");
+		
+		try{
+			Receiver receiver =  ReceiverFactory(receiverModel, receiverName,  receiverManagment, engine, logger);
+			logger.Debug("After Factory");
+			if(receiver == null){
+				logger.Debug("Unsupported IRD: " + receiverModel + ", " + receiverName + ", " + receiverManagment );
+				return null;
+			}
+			else if(lockType.Equals("IP"))
+			{
+				logger.Debug("Locking Multicast:" + multicast + ":" +  port);
+				if(port.Equals(""))
+				{
+					port = "2000";
+				}
+				if(multicast.Equals(""))
+				{
+					throw new EmptyFieldException("Multicast");
+				}
+				logger.Debug("Locking Multicast:" + multicast + ":" +  port);
+				receiver.LockMC( multicast,  port,  serviceID);
+			}
+			else if(lockType.Equals("RF"))
+			{
+				logger.Debug("Locking RF for: " + receiver.receiverName);
+				receiver.LockRF(polarity, modulation, frequency, localosilator,
+       							symbolRate , FEC ,rollOff, serviceID);
+			}
+			return receiver;
+		} catch (Exception e){
+			logger.Debug(e.Message);
+			logger.Debug(e.StackTrace);
+		}	
+		return null;
+	}
+	
+	private Receiver ReceiverFactory(string receiverModel, string receiverName,
+	                                 string receiverManagment, Engine engine, NLog.Logger logger){
+    	Receiver receiver = null;
+    	Data data = new Data();
+    	if(!data.ird_protocol_arraylist.Contains(receiverModel)){
+    		return null;
+		}
+		Element[] elements = engine.FindElementsByName(receiverName);
+		Element IRD = null;
+		logger.Debug("search by name list is null? = " + (elements == null));
+		
+		if (elements != null){
+			logger.Debug("elements[0] is null? = " + (elements[0] == null));
+			if(elements[0] == null)
+			{
+				logger.Debug("Searching by protocol");
+				elements = engine.FindElementsByProtocol(receiverModel, "production");
+				if(elements == null || elements.Length < 1)
+				{
+					logger.Debug("Found no elelemnts attached to this protocol");
+					return null;
+				}
+				for(int i =0; i < elements.Length; i++){
+					if(elements[0] != null && receiverManagment.Equals(elements[i].PollingIP))
+					{
+						IRD = elements[i];
+						i = elements.Length;
+					}
+				}
+			}
+			else 
+			{
+				IRD = elements[0];
+			}
+		}
+		
+		if(IRD == null){
+			logger.Debug("IRD is null, returning...");
+    		return null;
+    	}
+		
+		logger.Debug("Found IRD with the name: " + IRD.ElementName);
+		logger.Debug("Switching on the model to create the appropriate IRD class");
+		switch(receiverModel){
+			case "Cisco D9854":
+				  //logger.Debug("Found IRD with the name: " + IRD.ElementName);
+			      receiver = new ReceiverCiscoD9854(receiverName, receiverManagment, elements[0],logger, IRD);
+			      break;
+			default:
+			      logger.Debug("Receiver model {0} does not exist: " + receiverModel );
+			      break;
+		}
+		
+		return receiver;
+	}
+     
+}
+
+
+public class Data{
+	private string[] ird_protocol_list =  {/*"Cisco D9850",*/ "Cisco D9854"/*, 
+											"Scopus Network Technologies IRD-2900",
+                                          "Harmonic Proview PVR7000", "Harmonic Proview PVR8130",
+                                          "Tandberg RX1290", "Tandberg RX1220", "Tandberg RX1260",
+                                          "Erricson RX8200", "Sencore AG 2600", "Sencore AG 4400",
+                                         "Motorola DSR-4410MD", "MX1 T21 Decoder", "SA D9850" */};
+	public ArrayList ird_protocol_arraylist;
+	
+	public Data(){
+		this.ird_protocol_arraylist = new ArrayList(ird_protocol_list);
+	}
+}
+ 
+public abstract class Receiver{
+	
+	public string receiverName;
+	public string managmentIP;
+	protected Element receiver;
+	protected NLog.Logger logger;
+	protected Receiver(string receiverName, string managmentIP , Element receiver, NLog.Logger logger,Element ird){
+		
+		this.receiverName = receiverName;
+		this.managmentIP = managmentIP;
+		this.receiver = receiver;
+		this.logger = logger;
+		this.receiver = ird;
+		logger.Debug("In receiver super constructor, after ird name is:" + ird.Name);
+		logger.Debug("In receiver super constructor, after set receiver name is:" + receiver.Name);
+	}
+	public abstract string GetModulation();
+	public abstract string GetPolarity();
+	public abstract string Getfrequency();
+	public abstract string GetOsscilator();
+	public abstract string GetSymbolrate();
+	public abstract string GetFEC();
+	public abstract string GetRollOff();
+	public abstract string GetServiceID();
+	public abstract string GetActiveInput();
+	public abstract string GetMulticast();
+	public abstract string GetPort();
+	public abstract bool HasRfLock();
+	
+	public abstract void SetModulation(string modulation);
+	public abstract void SetPolarity(string polarity);
+	public abstract void SetFrequency(string frequency);
+	public abstract void SetOsscilator(string osscilator);
+	public abstract void SetSymbolrate(string symbolrate);
+	public abstract void SetFEC(string FEC);
+	public abstract void SetRollOff(string rollOff);
+	public abstract void SetServiceID(string channelName);
+	public abstract void SetActiveInput(string activeInput);
+	public abstract void SetMulticast(string multicast);
+	public abstract void SetPort(string port);
+
+	public abstract void LockRF(string polarity, string modulation, string frequency, string oscilator,
+	                   			string symbolrate , string FEC ,string rollOff, string channelName);
+	public abstract void LockMC(string multicast, string port, string channelName);
+		
+	}
+	
+public class ReceiverCiscoD9854 : Receiver
+{
+	
+	public List<string> sid_channel_nameList;
+	public List<string> channelIndexList;
+	private int sleepTime = 1000;
+	
+	public ReceiverCiscoD9854 (string receiverName, string managmentIP, Element receiver, NLog.Logger logger, Element IRD) : 
+		base (receiverName, managmentIP, receiver, logger, IRD)
+	{
+		sid_channel_nameList = new List<string>(getChannelListBypassDM(managmentIP,  "public", logger).Values);
+		logger.Debug("In receiver constructor, after set receiver name is:" + receiver.Name);
+	}
+
+	public override void LockRF(string polarity, string modulation, string frequency, string oscilator,
+	                   			string symbolrate , string FEC ,string rollOff, string serviceID){
+			
+			logger.Debug("Setting ActiveInput and sleeping for 1 second");			
+			SetActiveInput("RF1");
+			Thread.Sleep(sleepTime);
+			
+			logger.Debug("Setting frequency and sleeping for 1 second");
+			SetFrequency(frequency);
+			Thread.Sleep(sleepTime);
+			
+			logger.Debug("Setting oscilator and sleeping for 1 second");
+			SetOsscilator(oscilator);
+			Thread.Sleep(sleepTime);
+			
+			logger.Debug("Setting symbolrate and sleeping for 1 second");
+			SetSymbolrate(symbolrate);
+			Thread.Sleep(sleepTime);	
+						
+			logger.Debug("Setting polarity and sleeping for 1 second");
+			SetPolarity(polarity);
+			Thread.Sleep(sleepTime);
+			
+			logger.Debug("Setting modulation and sleeping for 1 second");
+			SetModulation(modulation);
+			Thread.Sleep(sleepTime);
+			
+			logger.Debug("Setting FEC and sleeping for 1 second");
+			// SetFEC(FEC);
+			Thread.Sleep(sleepTime);
+			
+			logger.Debug("Setting rollOff and sleeping for 1 second");
+			// SetRollOff(rollOff);
+			Thread.Sleep(sleepTime);		
+	}
+	
+	public override void LockMC(string multicast, string port, string serviceID){
+			logger.Debug("Setting ActiveInput and sleeping for 1 second");
+			SetActiveInput("IP");
+			Thread.Sleep(sleepTime);
+			logger.Debug("Setting multicast and sleeping for 1 second");
+			SetMulticast(multicast);
+			Thread.Sleep(sleepTime);
+			logger.Debug("Setting port and sleeping for 1 second");
+			SetPort(port);
+			Thread.Sleep(sleepTime);	
+		}
+	public override bool HasRfLock()
+	{
+		return receiver.GetParameter(475).ToString().Equals("2");
+	}
+	private string IsValidFrequency(string frequency){
+		try
+			{
+				int number = Convert.ToInt32(frequency);
+				if (number < 3050 || number > 12850)
+				{
+					return "Frequency Error";
+				}
+				else return number.ToString() + "000";
+			} catch (Exception e)
+			{
+				try
+				{
+					Double number = Convert.ToDouble(frequency);
+					if (number < 3.05 || number > 12.85)
+					{
+						return "Frequency Error";
+					}
+					else
+					{
+						return ((int)(number*1000000)).ToString();
+					}
+				}
+				catch (Exception e2)
+				{
+					return "Frequency Error";
+				}
+			}
+	}
+
+	public override string GetModulation(){
+		return (string)receiver.GetParameterDisplayByPrimaryKey(313,"");
+	}
+	public override string GetPolarity(){
+		return (string)receiver.GetParameterDisplayByPrimaryKey(371,"1");
+		}
+	public override string Getfrequency(){
+		return (string)receiver.GetParameterDisplayByPrimaryKey(457,"");
+	}
+	public override string GetOsscilator(){
+		return (string)receiver.GetParameterDisplayByPrimaryKey(353,"1");
+	}
+	public override string GetSymbolrate(){
+		return (string)receiver.GetParameterDisplayByPrimaryKey(311,"");
+		}
+	public override string GetFEC(){
+		return (string)receiver.GetParameterDisplayByPrimaryKey(315,"");
+		}
+	public override string GetRollOff(){
+		return (string)receiver.GetParameterDisplayByPrimaryKey(319,"");
+		}
+	public override string GetServiceID(){
+		string pe1 = channelIndexList[13];
+		string sidMixed =  pe1.Split(new string[]{"SID:"},StringSplitOptions.None)[1];
+		string sid = sidMixed.Substring(0,sidMixed.Length - 1);
+		return sid;
+	}
+	
+	public string GetLockedChannelInformation(){
+		string[] keys = receiver.GetTableDisplayKeys(100);
+		List<string> lst = new List<string>(keys);
+		return lst[13];
+	}
+	
+	public override string GetActiveInput(){
+		return (string)receiver.GetParameterDisplayByPrimaryKey("Active Input","");
+		}
+	
+	public override string GetMulticast(){
+		return (string)receiver.GetParameterDisplayByPrimaryKey(3102,"");
+		}
+	
+	public override string GetPort(){
+		return (string)receiver.GetParameterDisplayByPrimaryKey(3108,"");
+		}
+	
+	public override void SetModulation(string modulation){
+		modulation = modulation.ToLower();
+		switch(modulation){
+				case "dvb-s2":
+					receiver.SetParameter(314,"DVB-S2");
+					break;
+				case "dvb-s":
+					receiver.SetParameter(314,"DVB-S");
+					break;
+				default:
+					break;
+		}
+	}
+	
+	public override void SetPolarity(string polarity){
+		polarity = polarity.ToLower();
+		switch(polarity){
+			case"horizontal":
+				receiver.SetParameterByPrimaryKey(373,"1","Horizontal");
+				break;
+			case "h":
+				receiver.SetParameterByPrimaryKey(373,"1","Horizontal");
+				break;
+			case "vertical":
+				receiver.SetParameterByPrimaryKey(373,"1","Vertical");
+				break;
+			case"v":
+				receiver.SetParameterByPrimaryKey(373,"1","Vertical");
+				break;
+			default:
+				receiver.SetParameterByPrimaryKey(373,"1","Automatic");
+				break;				
+		}	
+	}
+	
+	public override void SetFrequency(string frequency){
+		logger.Debug("parsed: " + frequency);
+		int freq = 0;		
+		if(frequency.Contains("."))
+		{
+			freq = (int)Convert.ToDouble(frequency);
+		}
+		else freq = Int32.Parse(frequency);
+		logger.Debug("parsed: " + freq.ToString());
+		double freqd = freq;
+		logger.Debug("Frequency in Megabytes: " + freqd.ToString());
+		double gigafrequency = freqd / 1000.0;
+		logger.Debug("Frequency in Giabytes: " + gigafrequency.ToString());
+		receiver.SetParameter(310,gigafrequency.ToString());
+	}	
+	
+	public override void SetOsscilator(string osscilator){
+		double oscMhz = (double)Int32.Parse(osscilator);
+		double oscGhz = oscMhz/1000;
+		logger.Debug(oscGhz);
+		receiver.SetParameterByPrimaryKey(354,"1",oscGhz);
+		receiver.SetParameterByPrimaryKey(357,"1",oscGhz);
+	}
+	
+	public override void SetSymbolrate(string symbolrate){
+		receiver.SetParameter(312,symbolrate);
+	}
+	
+	// In this version will put the FEC always on Default Auto
+	public override void SetFEC(string FEC){
+		receiver.SetParameter(316,"Auto");
+		/*switch(FEC){
+			case"1/2":
+				receiver.SetParameter(316,"1/2");
+				break;
+			case "2/3":
+				receiver.SetParameter(316,"2/3");
+				break;
+			case "3/4":
+				receiver.SetParameter(316,"3/4");
+				break;
+			case"4/5":
+				receiver.SetParameter(316,"4/5");
+				break;
+			case "5/6":
+				receiver.SetParameter(316,"5/6");
+				break;
+			case "7/8":
+				receiver.SetParameter(316,"7/8");
+				break;
+			case "8/9":
+				receiver.SetParameter(316,"8/9");
+				break;
+			default:
+				receiver.SetParameter(316,"Auto");
+				break;				
+		}*/	
+	}	
+	
+	public override void SetRollOff(string rolloff){
+		switch(rolloff){
+			case".35":
+				receiver.SetParameter(320,".35");
+				break;
+			case ".25":
+				receiver.SetParameter(320,".25");
+				break;
+			case ".20":
+				receiver.SetParameter(320,".20");
+				break;
+			default:
+				receiver.SetParameter(320,"0.35");
+				break;				
+		}	
+	}	
+	
+	
+	
+	public override void SetActiveInput(string inputSelector){
+		logger.Debug("SetActiveInput.inputSelector: " + inputSelector);
+		switch(inputSelector){
+			case"RF1":
+				receiver.SetParameter(302,"RF1");
+				break;
+			case "RF2":
+				receiver.SetParameter(302,"RF2");
+				break;
+			case "RF3":
+				receiver.SetParameter(302,"RF3");
+				break;
+			case"RF4":
+				receiver.SetParameter(302,"RF4");
+				break;
+			case "IP":
+				receiver.SetParameter(302,"6");
+				break;
+			case "ASI":
+				receiver.SetParameter(302,"ASI");
+				break;
+			default:
+				break;					
+		}
+	}
+	
+	public override void SetMulticast(string multicast){
+		receiver.SetParameter(3103, multicast);
+		
+		// Work around bug that even though the multicast display changes, in fact no physical change is performed
+		// receiver.SetParameter(3101,"1");
+		// receiver.SetParameter(3101,"2");
+	}
+	
+	public override void SetPort(string port){
+		logger.Debug("SetPort: " + port);
+		logger.Debug("receiver is null: " + (receiver == null).ToString());
+		receiver.SetParameter(3109, port);
+		logger.Debug("Success");
+	}
+	public override void SetServiceID(string serviceID)
+	{
+		if(serviceID == null || serviceID.Equals(""))
+		{
+			return;
+		}
+		foreach(var channelName in sid_channel_nameList)
+		{
+			logger.Debug("In Set service: " + channelName);
+		}		
+			
+		var nextLockChannels = getChannelListBypassDM(managmentIP,  "public", logger);
+			
+		foreach(var channelInfo in nextLockChannels)
+		{
+			string sid = channelInfo.Key;
+			logger.Debug("channelInfo: " + channelInfo.Key + ":" + channelInfo.Value);
+			if(sid.Equals(serviceID))
+			{
+				try{
+					receiver.SetParameterByPrimaryKey(128,"1",channelInfo.Key + ":" + channelInfo.Value);
+				} catch (Exception e)
+				{
+					logger.Debug(e.Message);
+					logger.Debug(e.StackTrace);
+				}
+			}
+		}
+	}
+	public static Dictionary<string, string> getChannelListBypassDM(string managmentIP,  string communityString, NLog.Logger logger)
+	{
+		String snmpAgent = managmentIP;
+        String snmpCommunity = communityString;
+        SimpleSnmp snmp = new SimpleSnmp(snmpAgent, snmpCommunity);
+        // Create a request Pdu
+        Pdu pdu = new Pdu();
+        pdu.Type = PduType.GetNext;
+        List<string> lst1 = new List<string>();
+        List<string> lst2 = new List<string>();
+		
+        string sidbase = "1.3.6.1.4.1.1429.2.2.6.5.12.3.1.2.";
+        string NameBase = "1.3.6.1.4.1.1429.2.2.6.5.12.3.1.4.";
+        string sid = "";
+        string channelName = "";
+
+        Dictionary<string, string> channelList = new Dictionary<string, string>();
+        Dictionary<Oid, AsnType> result = null;
+
+        for (int i = 0; i < 100; i++)
+        {
+            sid = "";
+            channelName = "";
+            result = snmp.GetNext(SnmpVersion.Ver2,new string[]{ (sidbase + i) });
+            if (result == null)
+            {
+                logger.Debug("Request failed.");
+            }
+            else
+            {
+                foreach (KeyValuePair<Oid, AsnType> entry in result)
+                {
+                    if (entry.Key.ToString().Contains(sidbase))
+                    {
+                        sid = entry.Value.ToString();
+                    }
+                    else i = 100;
+                }
+            }
+            result = snmp.GetNext(SnmpVersion.Ver2, new string[] { (NameBase + i) });
+            if (result == null)
+            {
+                logger.Debug("Request failed.");
+            }
+            else
+            {
+                foreach (KeyValuePair<Oid, AsnType> entry in result)
+                {
+                    if (entry.Key.ToString().Contains(NameBase))
+                    {
+                        channelName = entry.Value.ToString();
+                    }
+                }
+            }
+
+            if (!sid.Equals("") && !channelName.Equals(""))
+            {
+                channelList.Add(sid, channelName);
+            }
+        }
+        
+        return channelList;
+	}
+}
